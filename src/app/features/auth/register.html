@@ -1,0 +1,182 @@
+<div class="register-container">
+  <div class="bg-pattern"></div>
+
+  <div class="register-card-wrapper" [class.loading]="isLoading()">
+    <div class="glass-card">
+
+      <!-- Header -->
+      <div class="header-section">
+        <img src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png" alt="Logo" class="logo">
+        <h1>إنشاء حساب جديد</h1>
+        <p>قم بملء البيانات التالية لتفعيل حسابك في النظام</p>
+      </div>
+
+      <!-- Stepper -->
+      <div class="stepper">
+        <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">1</div>
+        <div class="line"></div>
+        <div class="step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">2</div>
+        <div class="line"></div>
+        <div class="step" [class.active]="currentStep() >= 3" [class.completed]="currentStep() > 3">3</div>
+        <div class="line"></div>
+        <div class="step" [class.active]="currentStep() >= 4" [class.completed]="currentStep() > 4">4</div>
+        <div class="line"></div>
+        <div class="step" [class.active]="currentStep() >= 5" [class.completed]="currentStep() > 5">5</div>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+        <!-- Step 1: Card Number Only -->
+        <div class="step-content" *ngIf="currentStep() === 1">
+          <div class="step-title">التحقق من الهوية</div>
+
+          <div class="input-group">
+            <label>رقم الهوية / الإقامة</label>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined icon">badge</span>
+              <input type="text" formControlName="cardNo" placeholder="10XXXXXXXX" maxlength="10">
+            </div>
+            <small class="hint">يجب أن يتكون رقم الهوية من 10 أرقام</small>
+          </div>
+        </div>
+
+        <!-- Step 2: Dates (Hijri) -->
+        <div class="step-content" *ngIf="currentStep() === 2">
+          <div class="step-title">التواريخ (هجري)</div>
+
+          <div class="row">
+            <div class="input-group col">
+              <label>تاريخ الميلاد</label>
+              <div class="input-wrapper">
+                <span class="material-symbols-outlined icon">calendar_today</span>
+                <input type="text" formControlName="birthDatHijri" placeholder="14XX/XX/XX">
+              </div>
+              <small class="hint">مثال: 1410/05/15</small>
+            </div>
+
+            <div class="input-group col">
+              <label>تاريخ انتهاء الهوية</label>
+              <div class="input-wrapper">
+                <span class="material-symbols-outlined icon">event_busy</span>
+                <input type="text" formControlName="cardExpiredDate" placeholder="14XX/XX/XX">
+              </div>
+              <small class="hint">يجب أن يكون التاريخ في المستقبل</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Personal Names -->
+        <div class="step-content" *ngIf="currentStep() === 3">
+          <div class="step-title">الاسم بالكامل (باللغة العربية)</div>
+
+          <div class="name-grid">
+            <div class="input-group">
+              <label>الاسم الأول</label>
+              <div class="input-wrapper">
+                <span class="material-symbols-outlined icon">person</span>
+                <input type="text" formControlName="firstNameArabic" placeholder="الاسم الأول">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>اسم الأب</label>
+              <div class="input-wrapper">
+                <span class="material-symbols-outlined icon">person</span>
+                <input type="text" formControlName="surNameArabic" placeholder="اسم الأب">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>اسم الجد</label>
+              <div class="input-wrapper">
+                <span class="material-symbols-outlined icon">person</span>
+                <input type="text" formControlName="grandparentNameArabic" placeholder="اسم الجد">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>العائلة</label>
+              <div class="input-wrapper">
+                <span class="material-symbols-outlined icon">person</span>
+                <input type="text" formControlName="familyNameArabic" placeholder="العائلة">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Contact & Type -->
+        <div class="step-content" *ngIf="currentStep() === 4">
+          <div class="step-title">بيانات التواصل والنوع</div>
+
+          <div class="input-group">
+            <label>البريد الإلكتروني</label>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined icon">mail</span>
+              <input type="email" formControlName="email" placeholder="example@domain.com">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>رقم الجوال</label>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined icon">smartphone</span>
+              <input type="text" formControlName="phone" placeholder="05XXXXXXXX">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>نوع المستخدم</label>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined icon">group</span>
+              <select formControlName="type">
+                <option [value]="0">مساهم</option>
+                <option [value]="1">آخر</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5: Security -->
+        <div class="step-content" *ngIf="currentStep() === 5">
+          <div class="step-title">بيانات الحساب</div>
+
+          <div class="input-group">
+            <label>اسم المستخدم</label>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined icon">person</span>
+              <input type="text" formControlName="username" placeholder="اختر اسم مستخدم">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>كلمة المرور</label>
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined icon">lock</span>
+              <input type="password" formControlName="password" placeholder="********">
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button type="button" class="btn-prev" (click)="prevStep()" *ngIf="currentStep() > 1">السابق</button>
+
+          <button type="button" class="btn-next" (click)="nextStep()" *ngIf="currentStep() < 5"
+            [disabled]="isLoading()">
+            <span *ngIf="!isLoading()">التالي</span>
+            <div class="spinner" *ngIf="isLoading()"></div>
+          </button>
+
+          <button type="submit" class="btn-submit" *ngIf="currentStep() === 5"
+            [disabled]="isLoading() || registerForm.invalid">
+            <span *ngIf="!isLoading()">إنشاء الحساب</span>
+            <div class="spinner" *ngIf="isLoading()"></div>
+          </button>
+        </div>
+
+      </form>
+
+      <div class="footer-link">
+        لديك حساب بالفعل؟ <a routerLink="/auth/login">تسجيل الدخول</a>
+      </div>
+
+    </div>
+  </div>
+</div>

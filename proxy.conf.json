@@ -1,0 +1,7 @@
+{
+  "/Content": {
+    "target": "https://haj.mashariq.com.sa",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

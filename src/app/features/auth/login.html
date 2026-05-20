@@ -1,0 +1,150 @@
+<div class="login-container">
+  <!-- Background Pattern -->
+  <div class="bg-pattern"></div>
+
+  <div class="login-card-wrapper" [class.loading]="isLoading()">
+    <div class="glass-card">
+
+      <!-- Logo Section -->
+      <div class="logo-section">
+        <img src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png" alt="Mashariq Logo"
+          class="main-logo"
+          onerror="this.src='https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png'">
+      </div>
+
+      <!-- Step 1: Credentials -->
+      <div class="step-content" *ngIf="step() === 'credentials'">
+        <div class="welcome-text">
+          <h1>تسجيل الدخول</h1>
+          <p>مرحباً بك في نظام مشارق الموحد</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <div class="input-group">
+            <label for="username">اسم المستخدم</label>
+            <div class="input-wrapper">
+              <i class="icon-user"></i>
+              <input type="text" id="username" formControlName="username" placeholder="أدخل اسم المستخدم">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="password">كلمة المرور</label>
+            <div class="input-wrapper">
+              <!-- <span class="material-symbols-outlined icon">lock</span> -->
+              <input [type]="showPassword() ? 'text' : 'password'" id="password" formControlName="password"
+                placeholder="أدخل كلمة المرور">
+              <button type="button" class="toggle-pass" (click)="togglePassword()">
+                <span class="material-symbols-outlined">{{ showPassword() ? 'visibility' : 'visibility_off' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-options">
+            <label class="remember-me">
+              <input type="checkbox" formControlName="rememberMe">
+              <span>تذكرني</span>
+            </label>
+            <a href="#" class="forgot-pass">نسيت كلمة المرور؟</a>
+          </div>
+
+          <div class="error-message" *ngIf="errorMessage()">
+            {{ errorMessage() }}
+          </div>
+
+          <button type="submit" class="login-btn" [disabled]="isLoading()">
+            <span *ngIf="!isLoading()">دخول</span>
+            <div class="spinner" *ngIf="isLoading()"></div>
+          </button>
+
+          <div class="divider">
+            <span>أو</span>
+          </div>
+
+          <button type="button" class="register-btn" routerLink="/auth/register">إنشاء حساب جديد</button>
+        </form>
+      </div>
+
+      <!-- Step 2: Select Method -->
+      <div class="step-content" *ngIf="step() === 'select-method'">
+        <div class="welcome-text">
+          <h1>تفعيل الحساب</h1>
+          <p>اختر وسيلة استلام رمز التحقق</p>
+        </div>
+
+        <div class="methods-list">
+          <div class="method-option" [class.selected]="selectedMethod() === 2" (click)="onSelectMethod(2)">
+            <div class="method-icon"><span class="material-symbols-outlined">mail</span></div>
+            <div class="method-info">
+              <span class="method-title">البريد الإلكتروني</span>
+              <span class="method-hint">{{ maskEmail(userData()?.email) }}</span>
+            </div>
+            <div class="check-mark">
+              <span class="material-symbols-outlined check-icon">check_circle</span>
+            </div>
+          </div>
+
+          <div class="method-option" [class.selected]="selectedMethod() === 1" (click)="onSelectMethod(1)">
+            <div class="method-icon"><span class="material-symbols-outlined">smartphone</span></div>
+            <div class="method-info">
+              <span class="method-title">رقم الهاتف</span>
+              <span class="method-hint">{{ maskPhone(userData()?.phone) }}</span>
+            </div>
+            <div class="check-mark">
+              <span class="material-symbols-outlined check-icon">check_circle</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage()">
+          {{ errorMessage() }}
+        </div>
+
+        <button class="login-btn" (click)="requestOtp()" [disabled]="isLoading() || !selectedMethod()">
+          <span *ngIf="!isLoading()">إرسال الرمز</span>
+          <div class="spinner" *ngIf="isLoading()"></div>
+        </button>
+
+        <button class="register-btn mt-3" (click)="backToCredentials()">رجوع</button>
+      </div>
+
+      <!-- Step 3: Verify OTP -->
+      <div class="step-content" *ngIf="step() === 'verify-otp'">
+        <div class="welcome-text">
+          <h1>رمز التحقق</h1>
+          <p>أدخل الرمز المكون من 4 أرقام المرسل إليك</p>
+        </div>
+
+        <div class="otp-digits-container">
+          @for (digit of otpArray; track $index) {
+          <input type="text" maxlength="1" class="otp-digit" [value]="digit"
+            (input)="updateOtp($any($event.target).value, $index)" (keydown)="onOtpKeyDown($event, $index)">
+          }
+        </div>
+
+        <div class="resend-text">
+          لم يصلك الرمز؟ <a href="#" (click)="$event.preventDefault(); requestOtp()">إعادة إرسال</a>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage()">
+          {{ errorMessage() }}
+        </div>
+
+        <button class="login-btn" (click)="verifyOtp()" [disabled]="isLoading() || otpCode().length < 4">
+          <span *ngIf="!isLoading()">تأكيد</span>
+          <div class="spinner" *ngIf="isLoading()"></div>
+        </button>
+
+        <button class="register-btn mt-3" (click)="step.set('select-method')">رجوع</button>
+      </div>
+
+    </div>
+
+    <!-- Footer Links -->
+    <div class="login-footer">
+      <a href="#">المساعدة والدعم</a>
+      <span>&bull;</span>
+      <a href="#">سياسة الخصوصية</a>
+    </div>
+  </div>
+</div>

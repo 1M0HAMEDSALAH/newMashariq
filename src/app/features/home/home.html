@@ -1,0 +1,336 @@
+<div class="dashboard-wrapper">
+
+  <!-- =============================== -->
+  <!-- 1. MOBILE NATIVE APP VIEW       -->
+  <!-- =============================== -->
+  @if (isMobile()) {
+  <div class="mobile-app-layout">
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <div class="user-greeting">
+        <img src="https://ui-avatars.com/api/?name=Mohamed&background=ED7A44&color=fff" alt="User" class="avatar">
+        <div class="greeting-text">
+          <span>مرحباً بك 👋</span>
+          <h2>محمد المشاريق</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="mobile-search-wrapper">
+      <div class="ios-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="بحث في الأنظمة والخدمات..." (input)="onSearch($event)">
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    @if (isLoading()) {
+    <div class="loading-state">جاري التحميل...</div>
+    } @else if (filteredMenu.length > 0) {
+
+    <!-- Systems Horizontal Scroll (Quick Access) -->
+    <div class="mobile-section">
+      <h3 class="section-title">الأنظمة المتاحة</h3>
+      <div class="horizontal-systems-list">
+        @for (mainItem of filteredMenu; track mainItem.pageId) {
+        <div class="system-chip" [class.active]="selectedSystemId() === mainItem.pageId"
+          (click)="selectSystem(mainItem.pageId)">
+          <div class="chip-icon">
+            @if (isSvg(mainItem.iconPath)) {
+            <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(mainItem.iconPath)"
+              [style.mask-image]="getSvgUrl(mainItem.iconPath)"></div>
+            } @else {
+            <i [class]="mainItem.iconPath || 'fa-solid fa-cube'"></i>
+            }
+          </div>
+          <span>{{ mainItem.eName }}</span>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Selected System Services List (Bottom Sheet Style) -->
+    <div class="mobile-section mobile-services-area">
+      @if (selectedSystem) {
+      <div class="services-sheet">
+        <div class="sheet-header">
+          <h3>خدمات {{ selectedSystem.eName }}</h3>
+          <span class="count-badge">{{ countLeaves(selectedSystem) }}</span>
+        </div>
+
+        <div class="sheet-content">
+          @for (subItem of (selectedSystem.subMenu || selectedSystem.subMenus || []); track subItem.pageId || $index) {
+          @if (((subItem.subMenu || subItem.subMenus)?.length ?? 0) > 0) {
+          <div class="mobile-group-title">{{ subItem.eName }}</div>
+          <div class="mobile-list">
+            @for (leaf of (subItem.subMenu || subItem.subMenus); track leaf.pageId || $index) {
+            <div class="list-item" [routerLink]="getRoute(leaf.pageId)">
+              <div class="item-icon">
+                @if (isSvg(leaf.iconPath)) {
+                <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(leaf.iconPath)"
+                  [style.mask-image]="getSvgUrl(leaf.iconPath)"></div>
+                } @else {
+                <i [class]="leaf.iconPath || 'fa-solid fa-file-lines'"></i>
+                }
+              </div>
+              <span class="item-name">{{ leaf.eName }}</span>
+              <i class="fa-solid fa-chevron-left arrow"></i>
+            </div>
+            }
+          </div>
+          } @else {
+          <div class="mobile-list alone">
+            <div class="list-item" [routerLink]="getRoute(subItem.pageId)">
+              <div class="item-icon">
+                @if (isSvg(subItem.iconPath)) {
+                <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(subItem.iconPath)"
+                  [style.mask-image]="getSvgUrl(subItem.iconPath)"></div>
+                } @else {
+                <i [class]="subItem.iconPath || 'fa-solid fa-file-lines'"></i>
+                }
+              </div>
+              <span class="item-name">{{ subItem.eName }}</span>
+              <i class="fa-solid fa-chevron-left arrow"></i>
+            </div>
+          </div>
+          }
+          }
+        </div>
+      </div>
+      }
+    </div>
+    } @else {
+    <div class="empty-state">لا توجد أنظمة مطابقة للبحث.</div>
+    }
+  </div>
+  }
+
+
+  <!-- =============================== -->
+  <!-- 2. TABLET IPAD VIEW             -->
+  <!-- =============================== -->
+  @if (isTablet()) {
+  <div class="tablet-ipad-layout">
+    <!-- Tablet specific top bar -->
+    <div class="tablet-topbar">
+      <img src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png" alt="شعار مشاريق"
+        class="tablet-logo">
+      <div class="tablet-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="بحث..." (input)="onSearch($event)">
+      </div>
+    </div>
+
+    <div class="tablet-workspace">
+      <!-- Sidebar Drawer -->
+      <div class="tablet-drawer">
+        <h3 class="drawer-title">الأنظمة</h3>
+        <div class="drawer-list">
+          @for (mainItem of filteredMenu; track mainItem.pageId) {
+          <div class="drawer-item" [class.active]="selectedSystemId() === mainItem.pageId"
+            (click)="selectSystem(mainItem.pageId)">
+            <div class="drawer-icon">
+              @if (isSvg(mainItem.iconPath)) {
+              <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(mainItem.iconPath)"
+                [style.mask-image]="getSvgUrl(mainItem.iconPath)"></div>
+              } @else {
+              <i [class]="mainItem.iconPath || 'fa-solid fa-cube'"></i>
+              }
+            </div>
+            <span>{{ mainItem.eName }}</span>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="tablet-main-area">
+        @if (selectedSystem) {
+        <div class="tablet-system-header">
+          <h2>{{ selectedSystem.eName }}</h2>
+          <span class="pill">{{ countLeaves(selectedSystem) }} خدمات</span>
+        </div>
+
+        <div class="tablet-grid">
+          @for (subItem of (selectedSystem.subMenu || selectedSystem.subMenus || []); track subItem.pageId || $index) {
+          @if (((subItem.subMenu || subItem.subMenus)?.length ?? 0) > 0) {
+          <div class="tablet-group-card">
+            <h4 class="group-title">{{ subItem.eName }}</h4>
+            <div class="tablet-sub-grid">
+              @for (leaf of (subItem.subMenu || subItem.subMenus); track leaf.pageId || $index) {
+              <div class="tablet-card" [routerLink]="getRoute(leaf.pageId)">
+                <div class="card-icon">
+                  @if (isSvg(leaf.iconPath)) {
+                  <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(leaf.iconPath)"
+                    [style.mask-image]="getSvgUrl(leaf.iconPath)"></div>
+                  } @else {
+                  <i [class]="leaf.iconPath || 'fa-solid fa-file-lines'"></i>
+                  }
+                </div>
+                <span class="card-title">{{ leaf.eName }}</span>
+              </div>
+              }
+            </div>
+          </div>
+          } @else {
+          <div class="tablet-card alone" [routerLink]="getRoute(subItem.pageId)">
+            <div class="card-icon">
+              @if (isSvg(subItem.iconPath)) {
+              <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(subItem.iconPath)"
+                [style.mask-image]="getSvgUrl(subItem.iconPath)"></div>
+              } @else {
+              <i [class]="subItem.iconPath || 'fa-solid fa-file-lines'"></i>
+              }
+            </div>
+            <span class="card-title">{{ subItem.eName }}</span>
+          </div>
+          }
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+
+  <!-- =============================== -->
+  <!-- 3. DESKTOP DASHBOARD VIEW       -->
+  <!-- =============================== -->
+  @if (isDesktop()) {
+  <div class="desktop-pro-layout">
+
+    <!-- Top Stat Cards -->
+    <div class="dashboard-stats-row">
+      <div class="stat-card primary-gradient">
+        <div class="stat-info">
+          <h3>أنظمة مشاريق</h3>
+          <p>مرحباً بك محمد في البوابة الموحدة</p>
+        </div>
+      </div>
+
+      <div class="stat-card mini">
+        <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <div class="stat-data">
+          <span class="num">{{ menuItems().length }}</span>
+          <span class="label">الأنظمة المتاحة</span>
+        </div>
+      </div>
+
+      <div class="stat-card mini">
+        <div class="stat-icon purple"><i class="fa-solid fa-cube"></i></div>
+        <div class="stat-data">
+          <span class="num">{{ totalServicesCount }}</span>
+          <span class="label">إجمالي الخدمات</span>
+        </div>
+      </div>
+
+      <div class="stat-card search-card">
+        <div class="desktop-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="ابحث للوصول السريع..." (input)="onSearch($event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Split Pane -->
+    <div class="dashboard-split-pane">
+
+      <!-- Left: Systems List -->
+      <div class="pane-sidebar">
+        <div class="sidebar-header">
+          <h3>قائمة الأنظمة</h3>
+        </div>
+        <div class="sidebar-body">
+          @for (mainItem of filteredMenu; track mainItem.pageId) {
+          <div class="pro-system-item" [class.active]="selectedSystemId() === mainItem.pageId"
+            (click)="selectSystem(mainItem.pageId)">
+            <div class="sys-icon">
+              @if (isSvg(mainItem.iconPath)) {
+              <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(mainItem.iconPath)"
+                [style.mask-image]="getSvgUrl(mainItem.iconPath)"></div>
+              } @else {
+              <i [class]="mainItem.iconPath || 'fa-solid fa-cube'"></i>
+              }
+            </div>
+            <div class="sys-details">
+              <span class="sys-name">{{ mainItem.eName }}</span>
+              <span class="sys-meta">{{ countLeaves(mainItem) }} خدمة مفعلة</span>
+            </div>
+            <div class="active-indicator"></div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right: Services Glassmorphism Grid -->
+      <div class="pane-content">
+        @if (selectedSystem) {
+        <div class="content-header">
+          <div class="icon-wrap">
+            @if (isSvg(selectedSystem.iconPath)) {
+            <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(selectedSystem.iconPath)"
+              [style.mask-image]="getSvgUrl(selectedSystem.iconPath)"></div>
+            } @else {
+            <i [class]="selectedSystem.iconPath || 'fa-solid fa-cube'"></i>
+            }
+          </div>
+          <div class="title-wrap">
+            <h2>{{ selectedSystem.eName }}</h2>
+            <p>تصفح الخدمات والوحدات التابعة لهذا النظام</p>
+          </div>
+        </div>
+
+        <div class="content-body">
+          @for (subItem of (selectedSystem.subMenu || selectedSystem.subMenus || []); track subItem.pageId || $index) {
+          @if (((subItem.subMenu || subItem.subMenus)?.length ?? 0) > 0) {
+          <div class="pro-module-group">
+            <div class="module-title">
+              <span class="line"></span>
+              <h4>{{ subItem.eName }}</h4>
+            </div>
+            <div class="pro-cards-grid">
+              @for (leaf of (subItem.subMenu || subItem.subMenus); track leaf.pageId || $index) {
+              <div class="pro-card" [routerLink]="getRoute(leaf.pageId)">
+                <div class="pro-card-icon">
+                  @if (isSvg(leaf.iconPath)) {
+                  <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(leaf.iconPath)"
+                    [style.mask-image]="getSvgUrl(leaf.iconPath)"></div>
+                  } @else {
+                  <i [class]="leaf.iconPath || 'fa-solid fa-file-lines'"></i>
+                  }
+                </div>
+                <span class="pro-card-name">{{ leaf.eName }}</span>
+                <i class="fa-solid fa-arrow-left pro-card-arrow"></i>
+              </div>
+              }
+            </div>
+          </div>
+          } @else {
+          <div class="pro-cards-grid alone">
+            <div class="pro-card" [routerLink]="getRoute(subItem.pageId)">
+              <div class="pro-card-icon">
+                @if (isSvg(subItem.iconPath)) {
+                <div class="svg-icon" [style.-webkit-mask-image]="getSvgUrl(subItem.iconPath)"
+                  [style.mask-image]="getSvgUrl(subItem.iconPath)"></div>
+                } @else {
+                <i [class]="subItem.iconPath || 'fa-solid fa-file-lines'"></i>
+                }
+              </div>
+              <span class="pro-card-name">{{ subItem.eName }}</span>
+              <i class="fa-solid fa-arrow-left pro-card-arrow"></i>
+            </div>
+          </div>
+          }
+          }
+        </div>
+        }
+      </div>
+
+    </div>
+
+  </div>
+  }
+
+</div>
