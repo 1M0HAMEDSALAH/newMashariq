@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal, computed, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { MenuItem } from '../../core/models/menu-item.model';
 import { RouterModule } from '@angular/router';
 import { SidebarService } from '../../core/services/sidebar.service';
+import { getFeatureRoute } from '../../core/navigation/feature-navigation';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -20,8 +21,8 @@ export class HomeComponent implements OnInit {
   private breakpointObserver = inject(BreakpointObserver);
   private destroyRef = inject(DestroyRef);
 
-  menuItems = signal<MenuItem[]>([]);
-  isLoading = signal(true);
+  menuItems = this.sidebarService.menuItems;
+  isLoading = computed(() => !this.sidebarService.menuLoaded());
   searchQuery = signal('');
 
   /** Tracks which system pageIds are expanded */
@@ -35,8 +36,17 @@ export class HomeComponent implements OnInit {
   isTablet = signal(false);
   isDesktop = signal(true);
 
+  constructor() {
+    effect(() => {
+      const items = this.menuItems();
+      if (this.sidebarService.menuLoaded() && items.length > 0 && !this.selectedSystemId()) {
+        this.expandedSystems.set(new Set([items[0].pageId]));
+        this.selectedSystemId.set(items[0].pageId);
+      }
+    });
+  }
+
   ngOnInit() {
-    this.fetchMenu();
     this.setupResponsiveLayout();
   }
 
@@ -53,26 +63,6 @@ export class HomeComponent implements OnInit {
         this.isTablet.set(this.breakpointObserver.isMatched(tabletQuery));
         this.isDesktop.set(this.breakpointObserver.isMatched(desktopQuery));
       });
-  }
-
-  fetchMenu() {
-    this.authService.getSystemMenus().subscribe({
-      next: (res) => {
-        this.isLoading.set(false);
-        if (res.status === 'success') {
-          this.menuItems.set(res.data);
-          // Open first system by default
-          if (res.data.length > 0) {
-            this.expandedSystems.set(new Set([res.data[0].pageId]));
-            this.selectedSystemId.set(res.data[0].pageId);
-          }
-        }
-      },
-      error: (err) => {
-        this.isLoading.set(false);
-        console.error('Failed to fetch menu', err);
-      }
-    });
   }
 
   onSearch(event: Event) {
@@ -155,9 +145,21 @@ export class HomeComponent implements OnInit {
   }
 
   getRoute(pageId: number | string): any[] {
-    if (Number(pageId) === 14041) {
-      return ['/SystemAvailable/home/BusesReception'];
-    }
-    return ['/SystemAvailable/home', pageId];
+    return getFeatureRoute(pageId);
+  }
+
+  displayName(): string {
+    const name = this.authService.getUserProfile()?.fullName?.trim();
+    return name || 'مستخدم النظام';
+  }
+
+  avatarUrl(): string {
+    const name = encodeURIComponent(this.displayName());
+    return `https://ui-avatars.com/api/?name=${name}&background=ED7A44&color=fff&size=128`;
+  }
+
+  clearSearch(input: HTMLInputElement): void {
+    input.value = '';
+    this.searchQuery.set('');
   }
 }

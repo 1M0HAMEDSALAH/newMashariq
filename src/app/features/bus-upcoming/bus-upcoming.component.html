@@ -1,201 +1,264 @@
-<div *ngFor="let bus of buses(); trackBy: trackByBus" class="bus-row-card" [class.expanded]="expandedBusId()===bus.sid">
+<div class="upcoming-bus-container">
 
-  <!-- HEADER -->
-  <div class="bus-row-main" (click)="toggleExpand(bus.sid)">
-
-    <!-- RIGHT -->
-    <div class="bus-main-info">
-
-      <div class="bus-icon">
-        <i class="fa-solid fa-bus"></i>
+  @if (screen(); as currentScreen) {
+  <header class="screen-header">
+    <div class="screen-header-main">
+      <a routerLink="/SystemAvailable/home" class="back-link" aria-label="العودة للرئيسية">
+        <i class="fa-solid fa-arrow-right"></i>
+      </a>
+      <div class="screen-icon-wrap">
+        <i [class]="currentScreen.iconPath"></i>
       </div>
-
-      <div class="route-details">
-
-        <h3>
-          {{ bus.pathName }}
-        </h3>
-
-        <div class="route-meta">
-
-          <span class="bus-number">
-            {{ bus.bus.busNumber }}
-          </span>
-
-          <span class="passport-count">
-            {{ bus.passportCount }} حاج
-          </span>
-
-        </div>
-
+      <div class="screen-titles">
+        <h1>{{ currentScreen.eName }}</h1>
+        <p class="screen-subtitle">
+          @if (!isLoading()) {
+          <span>{{ totalItemCount() }} حافلة</span>
+          <span class="dot-sep">•</span>
+          <span>{{ selectedDate() | date:'fullDate':'':'ar' }}</span>
+          } @else {
+          <span>جاري التحميل...</span>
+          }
+        </p>
       </div>
+    </div>
+  </header>
+  }
 
+  <section class="filters-bar">
+    <div class="filter-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        #searchInput
+        type="search"
+        placeholder="بحث برقم الحافلة، المسار، الشركة..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        autocomplete="off"
+      />
+      @if (searchQuery()) {
+      <button type="button" class="clear-btn" (click)="clearSearch(searchInput)" aria-label="مسح البحث">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      }
     </div>
 
-    <!-- CENTER -->
-    <div class="bus-meta-info">
-
-      <div class="meta-item">
-
-        <i class="fa-solid fa-building"></i>
-
-        <div class="meta-text">
-
-          <span class="label">
-            الشركة
-          </span>
-
-          <span class="value">
-            {{ bus.transportationCompany }}
-          </span>
-
-        </div>
-
-      </div>
-
-      <div class="meta-item">
-
-        <i class="fa-solid fa-users"></i>
-
-        <div class="meta-text">
-
-          <span class="label">
-            عدد الحجاج
-          </span>
-
-          <span class="value">
-            {{ bus.passportCount }} حاج
-          </span>
-
-        </div>
-
-      </div>
-
+    <div class="filter-date">
+      <label for="trip-date">
+        <i class="fa-regular fa-calendar"></i>
+        تاريخ الرحلة
+      </label>
+      <input
+        id="trip-date"
+        type="date"
+        [value]="selectedDate()"
+        (change)="onDateChange($event)"
+      />
     </div>
 
-    <!-- LEFT -->
-    <div class="bus-status-action">
+    <div class="filter-page-size">
+      <label for="page-size">عرض</label>
+      <select id="page-size" [value]="pageSize()" (change)="onPageSizeChange($event)">
+        @for (size of pageSizeOptions; track size) {
+        <option [value]="size">{{ size }}</option>
+        }
+      </select>
+      <span>في الصفحة</span>
+    </div>
+  </section>
 
-      <div class="time-block">
-
-        <i class="fa-regular fa-clock"></i>
-
-        <div class="time-text">
-
-          <strong>
-            {{ formatTime(bus.busDepartureTime) }}
-          </strong>
-
-          <small>
-            {{ bus.busDepartureTime | date:'dd/MM/yyyy' }}
-          </small>
-
+  @if (isLoading()) {
+  <div class="state-panel loading-panel">
+    @for (i of [1, 2, 3]; track i) {
+    <div class="skeleton-card">
+      <div class="sk-icon"></div>
+      <div class="sk-lines">
+        <div class="sk-line wide"></div>
+        <div class="sk-line"></div>
+      </div>
+    </div>
+    }
+  </div>
+  } @else if (!buses().length) {
+  <div class="state-panel empty-panel">
+    <div class="empty-icon">
+      <i class="fa-solid fa-bus"></i>
+    </div>
+    <h3>لا توجد حافلات</h3>
+    <p>لم يتم العثور على حافلات لهذا التاريخ أو معايير البحث الحالية.</p>
+  </div>
+  } @else {
+  <div class="bus-list">
+    @for (bus of buses(); track trackByBus($index, bus)) {
+    <article
+      class="bus-row-card"
+      [class.expanded]="expandedBusId() === bus.sid"
+    >
+      <div class="bus-row-main" (click)="toggleExpand(bus.sid)">
+        <div class="bus-main-info">
+          <div class="bus-icon">
+            <i class="fa-solid fa-bus"></i>
+          </div>
+          <div class="route-details">
+            <h3>{{ bus.pathName }}</h3>
+            <div class="route-meta">
+              <span class="bus-number">{{ bus.bus.busNumber }}</span>
+              <span class="passport-count">{{ bus.passportCount }} حاج</span>
+            </div>
+          </div>
         </div>
 
+        <div class="bus-meta-info">
+          <div class="meta-item">
+            <i class="fa-solid fa-building"></i>
+            <div class="meta-text">
+              <span class="label">الشركة</span>
+              <span class="value">{{ bus.transportationCompany }}</span>
+            </div>
+          </div>
+          <div class="meta-item">
+            <i class="fa-solid fa-users"></i>
+            <div class="meta-text">
+              <span class="label">عدد الحجاج</span>
+              <span class="value">{{ bus.passportCount }} حاج</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bus-status-action">
+          <div class="time-block">
+            <i class="fa-regular fa-clock"></i>
+            <div class="time-text">
+              <strong>{{ formatTime(bus.busDepartureTime) }}</strong>
+              <small>{{ bus.busDepartureTime | date:'dd/MM/yyyy' }}</small>
+            </div>
+          </div>
+          <div class="status-badge" [ngClass]="getStatusClass(bus.status)">
+            {{ bus.statusName }}
+          </div>
+          <div class="action-arrow">
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+        </div>
       </div>
 
-      <div class="status-badge" [ngClass]="getStatusClass(bus.status)">
+      <div class="bus-expand-content">
+        <div class="expand-grid">
+          <div class="expand-item">
+            <label>السائق</label>
+            <span>{{ bus.driver.driverName || '-' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>رقم الجوال</label>
+            <span>{{ getDriverMobile(bus) }}</span>
+          </div>
+          <div class="expand-item">
+            <label>رقم الرحلة</label>
+            <span>{{ bus.flightDetails?.flightIata || '-' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>المطار</label>
+            <span>{{ bus.flightDetails?.airPortCode || '-' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>شركة الطيران</label>
+            <span>{{ bus.flightDetails?.airTransportationCompany || '-' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>Terminal</label>
+            <span>{{ bus.flightDetails?.terminalNo || '-' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>Manifest</label>
+            <span>{{ bus.manifestId || '-' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>الجنسية</label>
+            <span>
+              {{ bus.nationalities.length ? bus.nationalities[0].nationalityName : '-' }}
+            </span>
+          </div>
+        </div>
 
-        {{ bus.statusName }}
-
+        @if (bus.houses.length) {
+        <div class="houses-wrapper">
+          <div class="houses-title">
+            <i class="fa-solid fa-hotel"></i>
+            السكن
+          </div>
+          @for (house of bus.houses; track house.houseId) {
+          <div class="house-card">
+            <div>
+              <strong>{{ house.houseName }}</strong>
+              <small>Contract: {{ house.contractNumber }}</small>
+            </div>
+            <span class="house-count">{{ house.hajjCount }} حاج</span>
+          </div>
+          }
+        </div>
+        }
       </div>
-
-      <div class="action-arrow">
-        <i class="fa-solid fa-chevron-down"></i>
-      </div>
-
-    </div>
-
+    </article>
+    }
   </div>
 
-  <!-- EXPAND -->
-  <div class="bus-expand-content">
+  @if (totalItemCount() > 0) {
+  <footer class="pagination-bar">
+    <p class="pagination-summary">
+      عرض <strong>{{ rangeStart() }}</strong>–<strong>{{ rangeEnd() }}</strong>
+      من <strong>{{ totalItemCount() }}</strong>
+    </p>
 
-    <div class="expand-grid">
+    <nav class="pagination-controls" aria-label="تصفح الصفحات">
+      <button
+        type="button"
+        class="page-btn nav-btn"
+        [disabled]="pageNo() <= 1"
+        (click)="prevPage()"
+        aria-label="الصفحة السابقة"
+      >
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
 
-      <div class="expand-item">
-        <label>السائق</label>
-        <span>{{ bus.driver.driverName }}</span>
-      </div>
+      @if (paginationPages()[0] > 1) {
+      <button type="button" class="page-btn" (click)="goToPage(1)">1</button>
+      @if (paginationPages()[0] > 2) {
+      <span class="page-ellipsis">…</span>
+      }
+      }
 
-      <div class="expand-item">
-        <label>رقم الجوال</label>
-        <span>{{ getDriverMobile(bus) }}</span>
-      </div>
+      @for (page of paginationPages(); track page) {
+      <button
+        type="button"
+        class="page-btn"
+        [class.active]="pageNo() === page"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+      }
 
-      <div class="expand-item">
-        <label>رقم الرحلة</label>
-        <span>{{ bus.flightDetails?.flightIata || '-' }}</span>
-      </div>
+      @if (paginationPages()[paginationPages().length - 1] < totalPages()) {
+      @if (paginationPages()[paginationPages().length - 1] < totalPages() - 1) {
+      <span class="page-ellipsis">…</span>
+      }
+      <button type="button" class="page-btn" (click)="goToPage(totalPages())">
+        {{ totalPages() }}
+      </button>
+      }
 
-      <div class="expand-item">
-        <label>المطار</label>
-        <span>{{ bus.flightDetails?.airPortCode || '-' }}</span>
-      </div>
-
-      <div class="expand-item">
-        <label>شركة الطيران</label>
-        <span>{{ bus.flightDetails?.airTransportationCompany || '-' }}</span>
-      </div>
-
-      <div class="expand-item">
-        <label>Terminal</label>
-        <span>{{ bus.flightDetails?.terminalNo || '-' }}</span>
-      </div>
-
-      <div class="expand-item">
-        <label>Manifest</label>
-        <span>{{ bus.manifestId || '-' }}</span>
-      </div>
-
-      <div class="expand-item">
-        <label>الجنسية</label>
-
-        <span>
-          {{
-          bus.nationalities.length
-          ? bus.nationalities[0].nationalityName
-          : '-'
-          }}
-        </span>
-      </div>
-
-    </div>
-
-    <!-- HOUSES -->
-    <div class="houses-wrapper" *ngIf="bus.houses.length">
-
-      <div class="houses-title">
-
-        <i class="fa-solid fa-hotel"></i>
-
-        السكن
-
-      </div>
-
-      <div *ngFor="let house of bus.houses" class="house-card">
-
-        <div>
-
-          <strong>
-            {{ house.houseName }}
-          </strong>
-
-          <small>
-            Contract:
-            {{ house.contractNumber }}
-          </small>
-
-        </div>
-
-        <span class="house-count">
-          {{ house.hajjCount }} حاج
-        </span>
-
-      </div>
-
-    </div>
-
-  </div>
+      <button
+        type="button"
+        class="page-btn nav-btn"
+        [disabled]="pageNo() >= totalPages()"
+        (click)="nextPage()"
+        aria-label="الصفحة التالية"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </nav>
+  </footer>
+  }
+  }
 
 </div>

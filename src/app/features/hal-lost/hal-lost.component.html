@@ -1,0 +1,413 @@
+<div class="hal-container">
+
+  @if (screen(); as current) {
+  <header class="screen-header">
+    <div class="screen-header-main">
+      <a routerLink="/SystemAvailable/home" class="back-link" aria-label="العودة">
+        <i class="fa-solid fa-arrow-right"></i>
+      </a>
+      <div class="screen-icon-wrap">
+        <i [class]="current.iconPath"></i>
+      </div>
+      <div class="screen-titles">
+        <h1>{{ current.eName }}</h1>
+        <p class="screen-subtitle">
+          <span class="city-badge">{{ current.cityName }}</span>
+          @if (!isLoading()) {
+          <span class="dot-sep">•</span>
+          <span>{{ totalItemCount() }} بلاغ</span>
+          } @else {
+          <span>جاري التحميل...</span>
+          }
+        </p>
+      </div>
+    </div>
+    @if (current.canCreate) {
+    <button type="button" class="btn-primary" (click)="openCreateModal()">
+      <i class="fa-solid fa-plus"></i>
+      بلاغ جديد
+    </button>
+    }
+  </header>
+  }
+
+  <section class="filters-bar">
+    <div class="filter-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        #searchInput
+        type="search"
+        placeholder="بحث برقم البلاغ، الاسم، الجواز، الوصف..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+      />
+      @if (searchQuery()) {
+      <button type="button" class="clear-btn" (click)="clearSearch(searchInput)">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      }
+    </div>
+    <div class="filter-page-size">
+      <label for="hal-page-size">عرض</label>
+      <select id="hal-page-size" [value]="pageSize()" (change)="onPageSizeChange($event)">
+        @for (size of pageSizeOptions; track size) {
+        <option [value]="size">{{ size }}</option>
+        }
+      </select>
+      <span>في الصفحة</span>
+    </div>
+  </section>
+
+  @if (isLoading()) {
+  <div class="state-panel loading-panel">
+    @for (i of [1, 2, 3]; track i) {
+    <div class="skeleton-card"></div>
+    }
+  </div>
+  } @else if (!notifications().length) {
+  <div class="state-panel empty-panel">
+    <div class="empty-icon"><i class="fa-solid fa-person-walking"></i></div>
+    <h3>لا توجد بلاغات</h3>
+    <p>لم يتم العثور على بلاغات مطابقة لبحثك.</p>
+    <!-- @if (screen()?.canCreate) {
+    <button type="button" class="btn-primary" (click)="openCreateModal()">تسجيل بلاغ جديد</button>
+    } -->
+  </div>
+  } @else {
+  <div class="notification-list">
+    @for (item of notifications(); track trackById($index, item)) {
+    <article class="notification-card" [class.expanded]="expandedId() === item.id">
+      <div class="card-main" (click)="toggleExpand(item.id)">
+        <div class="card-leading">
+          <div class="notif-number">{{ item.notificationNumber }}</div>
+          <div class="card-titles">
+            <h3>{{ item.hajjName || '-' }}</h3>
+            <div class="card-chips">
+              @if (item.passportNumber) {
+              <span class="chip">{{ item.passportNumber }}</span>
+              }
+              @if (item.hajjNumber) {
+              <span class="chip muted">{{ item.hajjNumber }}</span>
+              }
+              @if (item.hajjCount > 1) {
+              <span class="chip accent">{{ item.hajjCount }} حاج</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="card-meta">
+          <div class="meta-block">
+            <span class="label">النوع</span>
+            <span class="value">{{ item.haL_TypeName || '—' }}</span>
+          </div>
+          <div class="meta-block">
+            <span class="label">المصدر</span>
+            <span class="value">{{ item.sourceTypeName || '—' }}</span>
+          </div>
+        </div>
+
+        <div class="card-trailing">
+          <div class="date-block">
+            <i class="fa-regular fa-clock"></i>
+            <span>{{ formatDateTime(item.date) }}</span>
+          </div>
+          <span class="status-badge" [ngClass]="getStatusClass(item.status)">
+            {{ item.statusName }}
+          </span>
+          <div class="chevron"><i class="fa-solid fa-chevron-down"></i></div>
+        </div>
+      </div>
+
+      <div class="card-expand">
+        <p class="description-text">{{ item.description || item.notes || '—' }}</p>
+        <div class="expand-grid">
+          <div class="expand-item">
+            <label>الجنسية</label>
+            <span>{{ item.nationalityName || '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>الجنس</label>
+            <span>{{ item.genderName || '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>العمر</label>
+            <span>{{ item.age ?? '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>الشركة</label>
+            <span>{{ item.companyName || '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>رمز المجموعة</label>
+            <span>{{ item.groupCode || item.hajjGroupCode || '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>المُبلّغ</label>
+            <span>{{ item.creatorName || item.reporterName || '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>جوال المُبلّغ</label>
+            <span>{{ item.creatorPhone || item.reporterPhone || '—' }}</span>
+          </div>
+          <div class="expand-item">
+            <label>رقم مركز الاتصال</label>
+            <span>{{ item.callCenterNotificationNo ?? '—' }}</span>
+          </div>
+          @if (item.excuterName) {
+          <div class="expand-item">
+            <label>المنفّذ</label>
+            <span>{{ item.excuterName }}</span>
+          </div>
+          }
+          @if (item.finisherName) {
+          <div class="expand-item">
+            <label>المُنهي</label>
+            <span>{{ item.finisherName }}</span>
+          </div>
+          }
+        </div>
+        @if (item.latitude || item.longitude) {
+        <a
+          class="map-link"
+          [href]="mapsLink(item.latitude, item.longitude)"
+          target="_blank"
+          rel="noopener"
+          (click)="$event.stopPropagation()"
+        >
+          <i class="fa-solid fa-location-dot"></i>
+          عرض الموقع على الخريطة
+        </a>
+        }
+      </div>
+    </article>
+    }
+  </div>
+
+  @if (totalItemCount() > 0) {
+  <footer class="pagination-bar">
+    <p class="pagination-summary">
+      عرض <strong>{{ rangeStart() }}</strong>–<strong>{{ rangeEnd() }}</strong>
+      من <strong>{{ totalItemCount() }}</strong>
+    </p>
+    <nav class="pagination-controls">
+      <button type="button" class="page-btn" [disabled]="pageNo() <= 1" (click)="prevPage()">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+      @for (page of paginationPages(); track page) {
+      <button
+        type="button"
+        class="page-btn"
+        [class.active]="pageNo() === page"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+      }
+      <button type="button" class="page-btn" [disabled]="pageNo() >= totalPages()" (click)="nextPage()">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </nav>
+  </footer>
+  }
+  }
+
+</div>
+
+@if (showCreateModal()) {
+<div class="modal-backdrop" (click)="closeCreateModal()">
+  <div class="modal-panel create-modal" role="dialog" (click)="$event.stopPropagation()">
+    <header class="modal-hero">
+      <div class="modal-hero-text">
+        <span class="modal-hero-badge">بلاغ جديد</span>
+        <h2>تسجيل بلاغ تائه</h2>
+        <p>حدد الموقع وأدخل بيانات الحاج أو المجموعة</p>
+      </div>
+      <button type="button" class="modal-close" (click)="closeCreateModal()" aria-label="إغلاق">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </header>
+
+    <form class="modal-body" [formGroup]="createForm" (ngSubmit)="submitCreate()">
+
+      <!-- نوع البلاغ -->
+      <section class="form-section">
+        <h3 class="section-title">
+          <span class="step-num">1</span>
+          نوع البلاغ
+        </h3>
+        <div class="type-switch">
+          <button
+            type="button"
+            class="type-option"
+            [class.active]="reportType() === 'single'"
+            (click)="setReportType('single')"
+          >
+            <i class="fa-solid fa-user"></i>
+            <span>حاج واحد</span>
+          </button>
+          <button
+            type="button"
+            class="type-option"
+            [class.active]="reportType() === 'group'"
+            (click)="setReportType('group')"
+          >
+            <i class="fa-solid fa-people-group"></i>
+            <span>مجموعة حجاج</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- الموقع -->
+      <section class="form-section location-section" [class.has-location]="hasValidLocation()">
+        <h3 class="section-title">
+          <span class="step-num">2</span>
+          الموقع <span class="required">*</span>
+        </h3>
+
+        @if (hasValidLocation()) {
+        <div class="location-success">
+          <i class="fa-solid fa-circle-check"></i>
+          <div>
+            <strong>تم تحديد الموقع</strong>
+            <span>
+              {{ createForm.controls.latitude.value | number:'1.5-5' }},
+              {{ createForm.controls.longitude.value | number:'1.5-5' }}
+            </span>
+          </div>
+        </div>
+        }
+
+        <div class="location-actions">
+          <button
+            type="button"
+            class="btn-location primary"
+            [disabled]="isLocating()"
+            (click)="captureLocation()"
+          >
+            @if (isLocating()) {
+            <i class="fa-solid fa-spinner fa-spin"></i> جاري التحديد...
+            } @else {
+            <i class="fa-solid fa-crosshairs"></i>
+            {{ hasValidLocation() ? 'إعادة تحديد GPS' : 'تحديد موقعي الحالي' }}
+            }
+          </button>
+          <button type="button" class="btn-location secondary" (click)="openMapsPicker()">
+            <i class="fa-solid fa-map"></i>
+            الخريطة
+          </button>
+        </div>
+
+        @if (locationError()) {
+        <p class="field-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ locationError() }}</p>
+        }
+
+        <button
+          type="button"
+          class="link-toggle"
+          (click)="showManualLocation.set(!showManualLocation())"
+        >
+          {{ showManualLocation() ? 'إخفاء الإدخال اليدوي' : 'إدخال الإحداثيات يدوياً' }}
+        </button>
+
+        @if (showManualLocation()) {
+        <div class="manual-coords">
+          <div class="form-field">
+            <label for="manual-lat">خط العرض</label>
+            <input
+              id="manual-lat"
+              type="number"
+              step="any"
+              formControlName="latitude"
+              placeholder="21.4225"
+              (input)="onManualCoordChange()"
+            />
+          </div>
+          <div class="form-field">
+            <label for="manual-lng">خط الطول</label>
+            <input
+              id="manual-lng"
+              type="number"
+              step="any"
+              formControlName="longitude"
+              placeholder="39.8262"
+              (input)="onManualCoordChange()"
+            />
+          </div>
+        </div>
+        }
+      </section>
+
+      <!-- بيانات الحاج -->
+      <section class="form-section">
+        <h3 class="section-title">
+          <span class="step-num">3</span>
+          @if (reportType() === 'single') { بيانات الحاج } @else { بيانات المجموعة }
+        </h3>
+
+        @if (reportType() === 'single') {
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="hajjName">اسم الحاج</label>
+            <input id="hajjName" type="text" formControlName="hajjName" placeholder="الاسم كما في الجواز" />
+          </div>
+          <div class="form-field">
+            <label for="passportNo">رقم الجواز</label>
+            <input id="passportNo" type="text" formControlName="passportNo" placeholder="رقم الجواز" />
+          </div>
+        </div>
+        } @else {
+        <div class="form-field">
+          <label for="hajjCount">عدد الحجاج في المجموعة</label>
+          <input id="hajjCount" type="number" min="2" formControlName="hajjCount" />
+        </div>
+        }
+
+        <div class="form-field full">
+          <label for="description">وصف البلاغ / الموقع</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="3"
+            placeholder="مثال: حاج تائه عند فندق الجوهرة — شارع منصور"
+          ></textarea>
+        </div>
+        <div class="form-field full">
+          <label for="notes">ملاحظات إضافية</label>
+          <textarea id="notes" formControlName="notes" rows="2" placeholder="اختياري"></textarea>
+        </div>
+      </section>
+
+      <!-- المُبلّغ -->
+      <section class="form-section reporter-section">
+        <h3 class="section-title">
+          <span class="step-num">4</span>
+          بيانات المُبلّغ
+          <span class="auto-tag">من حسابك</span>
+        </h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="reporterName">الاسم</label>
+            <input id="reporterName" type="text" formControlName="reporterName" placeholder="اسمك" />
+          </div>
+          <div class="form-field">
+            <label for="reporterPhone">الجوال</label>
+            <input id="reporterPhone" type="tel" formControlName="reporterPhone" placeholder="05xxxxxxxx" />
+          </div>
+        </div>
+      </section>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-ghost" (click)="closeCreateModal()">إلغاء</button>
+        <button type="submit" class="btn-submit" [disabled]="isSubmitting() || !hasValidLocation()">
+          @if (isSubmitting()) {
+          <i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...
+          } @else {
+          <i class="fa-solid fa-paper-plane"></i> إرسال البلاغ
+          }
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>
+}

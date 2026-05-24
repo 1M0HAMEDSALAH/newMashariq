@@ -64,7 +64,8 @@ export class LoginComponent {
           if (response.data.loginStatus === 4) {
             this.step.set('select-method');
           } else {
-            console.log('Login successful', response.data);
+            this.authService.saveUserSession(response.data);
+            this.router.navigate(['/SystemAvailable/home']);
           }
         } else {
           this.errorMessage.set(response.message || 'فشل تسجيل الدخول. يرجى التأكد من البيانات.');
@@ -156,11 +157,13 @@ export class LoginComponent {
       next: (res: any) => {
         this.isLoading.set(false);
         if (res.status === 'success') {
-          // Store token from OTP response
-          if (res.data && res.data.jwtTokenDto) {
-            (this.authService as any).saveToken(res.data.jwtTokenDto);
+          if (res.data?.jwtTokenDto) {
+            this.authService.saveToken(res.data.jwtTokenDto);
           }
-          console.log('OTP Verified, navigating to home');
+          this.authService.saveUserSession({
+            ...this.userData(),
+            ...res.data,
+          });
           this.router.navigate(['/SystemAvailable/home']);
         } else {
           this.errorMessage.set(res.message || 'رمز التحقق غير صحيح.');

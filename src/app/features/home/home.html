@@ -8,11 +8,15 @@
     <!-- Mobile Header -->
     <div class="mobile-header">
       <div class="user-greeting">
-        <img src="https://ui-avatars.com/api/?name=Mohamed&background=ED7A44&color=fff" alt="User" class="avatar">
+        <img [src]="avatarUrl()" [alt]="displayName()" class="avatar">
         <div class="greeting-text">
           <span>مرحباً بك 👋</span>
-          <h2>محمد المشاريق</h2>
+          <h2>{{ displayName() }}</h2>
         </div>
+      </div>
+      <div class="mobile-stat-pill">
+        <strong>{{ totalServicesCount }}</strong>
+        <span>خدمة</span>
       </div>
     </div>
 
@@ -26,7 +30,10 @@
 
     <!-- Main Content -->
     @if (isLoading()) {
-    <div class="loading-state">جاري التحميل...</div>
+    <div class="skeleton-zone mobile-sk">
+      <div class="sk-chip-row"></div>
+      <div class="sk-sheet"></div>
+    </div>
     } @else if (filteredMenu.length > 0) {
 
     <!-- Systems Horizontal Scroll (Quick Access) -->
@@ -114,7 +121,7 @@
   <div class="tablet-ipad-layout">
     <!-- Tablet specific top bar -->
     <div class="tablet-topbar">
-      <img src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png" alt="شعار مشاريق"
+      <img src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png" alt="شعار مشارق"
         class="tablet-logo">
       <div class="tablet-search">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -201,13 +208,22 @@
   @if (isDesktop()) {
   <div class="desktop-pro-layout">
 
-    <!-- Top Stat Cards -->
+    @if (isLoading()) {
+    <div class="skeleton-zone desktop-sk">
+      <div class="sk-stats-row"></div>
+      <div class="sk-split"></div>
+    </div>
+    } @else {
     <div class="dashboard-stats-row">
       <div class="stat-card primary-gradient">
         <div class="stat-info">
-          <h3>أنظمة مشاريق</h3>
-          <p>مرحباً بك محمد في البوابة الموحدة</p>
+          <span class="welcome-badge">بوابة مشارق</span>
+          <h3>مرحباً، {{ displayName() }}</h3>
+          <p>اختر نظاماً من القائمة للوصول السريع لجميع الخدمات</p>
         </div>
+        <!-- <div class="stat-avatar-ring">
+          <img [src]="avatarUrl()" [alt]="displayName()" />
+        </div> -->
       </div>
 
       <div class="stat-card mini">
@@ -234,7 +250,6 @@
       </div>
     </div>
 
-    <!-- Advanced Split Pane -->
     <div class="dashboard-split-pane">
 
       <!-- Left: Systems List -->
@@ -329,6 +344,7 @@
       </div>
 
     </div>
+    }
 
   </div>
   }

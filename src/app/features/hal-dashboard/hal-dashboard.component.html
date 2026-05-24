@@ -1,0 +1,162 @@
+<div class="hal-container">
+
+  <header class="screen-header">
+    <div class="screen-header-main">
+      <a routerLink="/SystemAvailable/home" class="back-link" aria-label="العودة للرئيسية">
+        <i class="fa-solid fa-arrow-right"></i>
+      </a>
+      <div class="screen-icon-wrap">
+        <i class="fa-solid fa-chart-column"></i>
+      </div>
+      <div class="screen-titles">
+        <h1>لوحة الصحة</h1>
+        <p class="screen-subtitle">
+          <span class="city-badge">{{ scopeLabel() }}</span>
+          @if (lastUpdated()) {
+          <span class="dot-sep">•</span>
+          <span>تحديث {{ formatTime(lastUpdated()) }}</span>
+          }
+        </p>
+      </div>
+    </div>
+    <button type="button" class="btn-ghost" (click)="loadDashboard()" [disabled]="isLoading()">
+      <i class="fa-solid fa-arrows-rotate" [class.spinning]="isLoading()"></i>
+      تحديث
+    </button>
+  </header>
+
+  <section class="filters-bar">
+    <div class="filter-scope" role="tablist" aria-label="نطاق المدينة">
+      <button type="button" role="tab" [class.active]="cityScope() === 'all'" (click)="setScope('all')">
+        جميع المدن
+      </button>
+      <button type="button" role="tab" [class.active]="cityScope() === 'makkah'" (click)="setScope('makkah')">
+        مكة المكرمة
+      </button>
+      <button type="button" role="tab" [class.active]="cityScope() === 'madinah'" (click)="setScope('madinah')">
+        المدينة المنورة
+      </button>
+    </div>
+  </section>
+
+  @if (isLoading() && !data()) {
+  <div class="state-panel loading-panel">
+    @for (i of [1, 2, 3]; track i) {
+    <div class="skeleton-card"></div>
+    }
+  </div>
+  } @else if (loadError()) {
+  <div class="state-panel empty-panel">
+    <div class="empty-icon"><i class="fa-solid fa-chart-line"></i></div>
+    <h3>تعذر تحميل المؤشرات</h3>
+    <p>{{ loadError() }}</p>
+    <button type="button" class="btn-primary" (click)="loadDashboard()">إعادة المحاولة</button>
+  </div>
+  } @else if (data(); as d) {
+
+  <section class="summary-row">
+    @for (item of summaryMetrics(); track item.id) {
+    <article class="summary-card" [class]="item.tone" (click)="selectMetric(item.id)"
+      [class.is-active]="selectedMetricId() === item.id">
+      <div class="summary-icon"><i [class]="item.icon"></i></div>
+      <div class="summary-body">
+        <span class="summary-label">{{ item.label }}</span>
+        <strong class="summary-value">{{ formatNumber(displayValue(item.id)) }}</strong>
+        @if (cityScope() === 'all' && item.mekkahKey) {
+        <span class="summary-hint">مكة {{ mekkahShare(d, item) }}%</span>
+        }
+      </div>
+    </article>
+    }
+  </section>
+
+  <div class="dash-layout">
+    <div class="dash-main">
+      <div class="block-head">
+        <h2>مؤشرات الأحداث</h2>
+        <span class="block-count">{{ eventMetrics.length }} مؤشر</span>
+      </div>
+      <div class="stat-grid">
+        @for (m of eventMetrics; track m.id) {
+        <article class="stat-card" [class]="m.tone" [class.is-active]="selectedMetricId() === m.id"
+          (click)="selectMetric(m.id)">
+          <div class="stat-icon"><i [class]="m.icon"></i></div>
+          <div class="stat-body">
+            <span class="stat-label">{{ m.label }}</span>
+            <strong>{{ formatNumber(displayValue(m.id)) }}</strong>
+          </div>
+          @if (cityScope() === 'all' && m.mekkahKey) {
+          <div class="stat-share">
+            <span class="share-bar" [style.width.%]="mekkahShare(d, m)"></span>
+          </div>
+          }
+        </article>
+        }
+      </div>
+
+      <div class="block-head">
+        <h2>البلاغات</h2>
+      </div>
+      <div class="stat-grid stat-grid--compact">
+        @for (m of reportMetrics; track m.id) {
+        <article class="stat-card stat-card--sm" [class]="m.tone"
+          [class.is-active]="selectedMetricId() === m.id" (click)="selectMetric(m.id)">
+          <div class="stat-icon"><i [class]="m.icon"></i></div>
+          <div class="stat-body">
+            <span class="stat-label">{{ m.label }}</span>
+            <strong>{{ formatNumber(displayValue(m.id)) }}</strong>
+          </div>
+        </article>
+        }
+      </div>
+    </div>
+
+    <aside class="insight-panel">
+      <div class="insight-header">
+        <h2>تفاصيل المؤشر</h2>
+        <span class="chip accent">{{ selectedMetric().label }}</span>
+      </div>
+
+      <div class="insight-hero">
+        <span class="insight-value">{{ formatNumber(displayValue(selectedMetric().id)) }}</span>
+        <span class="insight-caption">القيمة الحالية — {{ scopeLabel() }}</span>
+      </div>
+
+      @if (selectedMetric().mekkahKey && cityScope() === 'all') {
+      <div class="split-bars">
+        <div class="split-row">
+          <span>مكة المكرمة</span>
+          <div class="split-track"><i [style.width.%]="mekkahShare(d, selectedMetric())"></i></div>
+          <em>{{ mekkahShare(d, selectedMetric()) }}%</em>
+        </div>
+        <div class="split-row">
+          <span>المدينة المنورة</span>
+          <div class="split-track split-track--alt"><i [style.width.%]="100 - mekkahShare(d, selectedMetric())"></i></div>
+          <em>{{ 100 - mekkahShare(d, selectedMetric()) }}%</em>
+        </div>
+      </div>
+      }
+
+      <div class="block-head block-head--inner">
+        <h3>توزيع الأحداث</h3>
+        <span class="block-count">{{ formatNumber(chartTotal()) }} إجمالي</span>
+      </div>
+
+      <ul class="breakdown-list">
+        @for (seg of chartSegments(); track seg.id) {
+        <li [class.is-active]="selectedMetricId() === seg.id" (click)="selectMetric(seg.id)">
+          <div class="breakdown-top">
+            <span class="breakdown-label">{{ seg.label }}</span>
+            <span class="breakdown-val">{{ formatNumber(seg.value) }}</span>
+          </div>
+          <div class="breakdown-track">
+            <span [style.width.%]="barWidth(seg.value, chartTotal())"></span>
+          </div>
+          <span class="breakdown-pct">{{ segmentPercent(seg.value) }}%</span>
+        </li>
+        }
+      </ul>
+    </aside>
+  </div>
+  }
+</div>

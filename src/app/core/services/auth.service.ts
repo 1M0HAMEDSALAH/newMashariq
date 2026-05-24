@@ -3,6 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, throwError } from 'rxjs';
 import { LoginResponse } from '../models/menu-item.model';
 
+export interface UserProfile {
+  fullName: string;
+  phone: string;
+  partyId: number;
+}
+
+const USER_PROFILE_KEY = 'user_profile';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -12,8 +20,11 @@ export class AuthService {
   login(credentials: any): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`Auth/login`, credentials).pipe(
       tap(res => {
-        if (res.status === 'success' && res.data.jwtTokenDto) {
-          this.saveToken(res.data.jwtTokenDto);
+        if (res.status === 'success' && res.data) {
+          if (res.data.jwtTokenDto) {
+            this.saveToken(res.data.jwtTokenDto);
+          }
+          this.saveUserSession(res.data);
         }
       })
     );
@@ -82,6 +93,87 @@ export class AuthService {
     localStorage.setItem('auth_token', tokenStr);
   }
 
+  saveUserSession(data: Record<string, unknown> | null | undefined): void {
+    if (!data) return;
+
+    const partyId = this.pickField(data, [
+      'party_SID',
+      'partySid',
+      'partyId',
+      'requestedByPartyId',
+    ]);
+    if (partyId != null && partyId !== '') {
+      localStorage.setItem('party_sid', String(partyId));
+    }
+
+    const existing = this.getUserProfile();
+    const fullName = this.pickField(data, [
+      'fullName',
+      'FullName',
+      'partyName',
+      'PartyName',
+      'name',
+      'userFullName',
+      'displayName',
+    ]);
+    const phone = this.pickField(data, [
+      'phone',
+      'Phone',
+      'mobile',
+      'Mobile',
+      'phoneNumber',
+      'partyMobile',
+      'mobileNo',
+      'mobileNumber',
+    ]);
+
+    const profile: UserProfile = {
+      fullName: (fullName != null ? String(fullName) : '') || existing?.fullName || '',
+      phone: (phone != null ? String(phone) : '') || existing?.phone || '',
+      partyId: partyId != null ? Number(partyId) : existing?.partyId ?? 0,
+    };
+
+    if (profile.fullName || profile.phone || profile.partyId) {
+      localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+    }
+  }
+
+  getUserProfile(): UserProfile | null {
+    const raw = localStorage.getItem(USER_PROFILE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as UserProfile;
+    } catch {
+      return null;
+    }
+  }
+
+  getReporterDefaults(): { reporterName: string; reporterPhone: string } {
+    const profile = this.getUserProfile();
+    return {
+      reporterName: profile?.fullName?.trim() ?? '',
+      reporterPhone: profile?.phone?.trim() ?? '',
+    };
+  }
+
+  getPartyId(): number {
+    const fromProfile = this.getUserProfile()?.partyId;
+    if (fromProfile) return fromProfile;
+    const raw = localStorage.getItem('party_sid');
+    return raw ? Number(raw) : 0;
+  }
+
+  private pickField(
+    data: Record<string, unknown>,
+    keys: string[]
+  ): unknown {
+    for (const key of keys) {
+      const val = data[key];
+      if (val != null && val !== '') return val;
+    }
+    return null;
+  }
+
   getSystemMenus(): Observable<any> {
     return this.http.get('layouts/SystemMenus');
   }
@@ -92,6 +184,8 @@ export class AuthService {
 
   logout() {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('party_sid');
+    localStorage.removeItem(USER_PROFILE_KEY);
   }
 
   /**

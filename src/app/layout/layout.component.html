@@ -1,0 +1,25 @@
+<div
+  class="layout-shell"
+  [class.sidebar-collapsed]="sidebarService.isCollapsed() && !sidebarService.isMobileNav()"
+  [class.mobile-menu-open]="sidebarService.mobileMenuOpen()"
+>
+  @if (sidebarService.mobileMenuOpen()) {
+  <button
+    type="button"
+    class="sidebar-backdrop"
+    aria-label="إغلاق القائمة"
+    (click)="sidebarService.closeMobileMenu()"
+  ></button>
+  }
+
+  <app-sidebar class="app-sidebar" [class.is-open]="sidebarService.mobileMenuOpen()" />
+
+  <main class="main-container">
+    <app-header />
+    <section class="main-content">
+      <div class="content-view">
+        <router-outlet />
+      </div>
+    </section>
+  </main>
+</div>

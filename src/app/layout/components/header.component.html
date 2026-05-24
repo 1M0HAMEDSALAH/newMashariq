@@ -1,0 +1,48 @@
+<header class="top-bar">
+  <div class="header-left">
+    <button
+      type="button"
+      class="menu-toggle"
+      (click)="sidebarService.toggleSidebar()"
+      aria-label="القائمة"
+    >
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <a routerLink="/SystemAvailable/home" class="brand-link">
+      <img
+        src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png"
+        alt="مشاريق"
+        class="brand-logo"
+      />
+      <div class="page-title">
+        <h1>{{ pageTitle() }}</h1>
+        <div class="crumbs">{{ pageSubtitle() }}</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="header-right">
+    <a routerLink="/SystemAvailable/home" class="home-pill" title="الرئيسية">
+      <i class="fa-solid fa-house"></i>
+      <span class="hide-mobile">الرئيسية</span>
+    </a>
+
+    <button type="button" class="icon-btn" aria-label="الإشعارات">
+      <i class="fa-regular fa-bell"></i>
+      <span class="dot"></span>
+    </button>
+
+    <div class="user-chip">
+      <img [src]="avatarUrl()" [alt]="displayName()" class="avatar" />
+      <div class="info hide-mobile">
+        <span class="name">{{ displayName() }}</span>
+        <span class="role">بوابة مشاريق</span>
+      </div>
+    </div>
+
+    <button type="button" class="logout-btn" (click)="logout()" title="تسجيل الخروج">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </button>
+  </div>
+</header>

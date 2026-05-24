@@ -43,27 +43,50 @@
 .mobile-app-layout {
   display: flex;
   flex-direction: column;
-  background-color: var(--surface-2);
-  min-height: 100vh;
-  margin: -24px;
-  /* counteract outer padding if any */
-  padding-bottom: 30px;
+  background: transparent;
+  min-height: 100%;
+  padding-bottom: 24px;
 }
 
 .mobile-header {
-  background: white;
-  padding: 30px 24px 20px;
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, #fff 0%, #fdf6f1 100%);
+  padding: 22px 20px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
 }
 
 .user-greeting {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  min-width: 0;
+}
+
+.mobile-stat-pill {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--primary-soft);
+  border-radius: 14px;
+  color: var(--primary);
+}
+
+.mobile-stat-pill strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mobile-stat-pill span {
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .avatar {
@@ -246,14 +269,21 @@
   border-bottom: 1px solid var(--border);
   text-decoration: none;
   color: inherit;
+  transition: var(--transition);
 }
 
 .list-item:last-child {
   border-bottom: none;
 }
 
+.list-item:hover,
 .list-item:active {
-  background: var(--surface-3);
+  background: var(--primary-soft);
+}
+
+.list-item:hover .arrow {
+  color: var(--primary);
+  transform: translateX(-4px);
 }
 
 .item-icon {
@@ -530,23 +560,64 @@
   align-items: center;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: var(--transition);
+}
+
+.stat-card.mini:hover,
+.stat-card.search-card:focus-within {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .stat-card.primary-gradient {
-  background: linear-gradient(135deg, var(--secondary) 0%, #0f172a 100%);
+  background: linear-gradient(135deg, var(--secondary) 0%, #1e3a5f 55%, #0f172a 100%);
   color: white;
   justify-content: space-between;
+  gap: 16px;
+  min-height: 120px;
+}
+
+.welcome-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(237, 122, 68, 0.25);
+  color: #fdba74;
+  margin-bottom: 10px;
 }
 
 .stat-info h3 {
-  font-size: 24px;
+  font-size: clamp(18px, 2vw, 24px);
   margin: 0 0 8px 0;
+  font-weight: 800;
 }
 
 .stat-info p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+.stat-avatar-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--primary), #fbbf24);
+  flex-shrink: 0;
+}
+
+.stat-avatar-ring img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #0f172a;
 }
 
 .stat-logo {
@@ -897,5 +968,77 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ─── Skeleton loading ─── */
+.skeleton-zone {
+  animation: fadeUp 0.35s ease;
+}
+
+.sk-chip-row,
+.sk-sheet,
+.sk-stats-row,
+.sk-split {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e8ecf0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 16px;
+}
+
+.mobile-sk .sk-chip-row {
+  height: 88px;
+  margin: 0 0 16px;
+}
+
+.mobile-sk .sk-sheet {
+  height: 320px;
+}
+
+.desktop-sk .sk-stats-row {
+  height: 120px;
+  margin-bottom: 24px;
+}
+
+.desktop-sk .sk-split {
+  height: 520px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Responsive stats grid ─── */
+@media (max-width: 1280px) {
+  .dashboard-stats-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-card.primary-gradient {
+    grid-column: 1 / -1;
+  }
+
+  .stat-card.search-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .dashboard-split-pane {
+    flex-direction: column;
+  }
+
+  .pane-sidebar {
+    width: 100%;
+  }
+
+  .sidebar-body {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .pro-system-item {
+    flex: 1 1 200px;
   }
 }

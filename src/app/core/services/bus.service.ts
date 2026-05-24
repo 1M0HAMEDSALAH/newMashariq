@@ -14,29 +14,28 @@ export class BusService {
   private http = inject(HttpClient);
 
   getUpcomingBuses(
+    pageIds: number[],
     pageNo: number = 1,
     pageSize: number = 10,
     search?: string,
     date?: string
   ): Observable<MasterAmTdmResponse> {
     let params = new HttpParams()
-      .set('PageId', 14041)
       .set('PageNo', pageNo)
       .set('PageSize', pageSize);
 
-    if (search) {
-      params = params.set('FilterBy', search);
+    pageIds.forEach((id) => {
+      params = params.append('PageId', id.toString());
+    });
+
+    if (search?.trim()) {
+      params = params.set('FilterBy', search.trim());
     }
 
     if (date) {
-      params = params
-        .set('Date', date)
-        .set('TripDate', date);
+      params = params.set('Date', date).set('TripDate', date);
     }
 
-    return this.http.get<MasterAmTdmResponse>(
-      'MasterAmTdm',
-      { params }
-    );
+    return this.http.get<MasterAmTdmResponse>('MasterAmTdm', { params });
   }
 }

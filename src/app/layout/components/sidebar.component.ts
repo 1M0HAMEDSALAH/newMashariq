@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarService } from '../../core/services/sidebar.service';
 import { AuthService } from '../../core/services/auth.service';
+import { getFeatureRoute } from '../../core/navigation/feature-navigation';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,13 +12,13 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <aside class="sidebar" [class.collapsed]="sidebarService.isCollapsed()">
       <div class="sidebar-inner">
-        <div class="sidebar-header">
+        <a routerLink="/SystemAvailable/home" class="sidebar-header" (click)="sidebarService.closeMobileMenu()">
           @if (!sidebarService.isCollapsed()) {
             <img src="https://haj.mashariq.com.sa/Content/layouts/assets/images/logo-dark.png" alt="Logo" class="logo">
           } @else {
             <div class="brand-circle">M</div>
           }
-        </div>
+        </a>
 
         <div class="sidebar-search" *ngIf="!sidebarService.isCollapsed()">
           <div class="search-input-wrapper">
@@ -67,7 +68,7 @@ import { AuthService } from '../../core/services/auth.service';
                         @if (isOpen(sub)) {
                           <div class="nav-sub level-3">
                             @for (subSub of sub.subMenus; track subSub.pageId || $index) {
-                              <a [routerLink]="getRoute(subSub.pageId)" class="sub-link" routerLinkActive="active" [title]="sidebarService.isCollapsed() ? subSub.eName : ''">
+                              <a [routerLink]="getRoute(subSub.pageId)" class="sub-link" routerLinkActive="active" [title]="sidebarService.isCollapsed() ? subSub.eName : ''" (click)="sidebarService.closeMobileMenu()">
                                 <span class="dot"></span>
                                 <span>{{ subSub.eName }}</span>
                               </a>
@@ -75,7 +76,7 @@ import { AuthService } from '../../core/services/auth.service';
                           </div>
                         }
                       } @else {
-                        <a [routerLink]="getRoute(sub.pageId)" class="sub-link" routerLinkActive="active" [title]="sidebarService.isCollapsed() ? sub.eName : ''">
+                        <a [routerLink]="getRoute(sub.pageId)" class="sub-link" routerLinkActive="active" [title]="sidebarService.isCollapsed() ? sub.eName : ''" (click)="sidebarService.closeMobileMenu()">
                           @if (isSvg(sub.iconPath)) {
                             <div class="nav-icon svg-icon sub-icon" [style.-webkit-mask-image]="getSvgUrl(sub.iconPath)" [style.mask-image]="getSvgUrl(sub.iconPath)"></div>
                           } @else if (sub.iconPath) {
@@ -132,6 +133,7 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       min-height: 100px;
       transition: all 0.3s;
+      text-decoration: none;
     }
 
     .logo { max-width: 160px; transition: all 0.3s; }
@@ -349,11 +351,6 @@ export class SidebarComponent {
   }
 
   getRoute(pageId: number | string): any[] {
-    switch (Number(pageId)) {
-      case 14041:
-        return ['/SystemAvailable/buses/upcoming'];
-      default:
-        return ['/SystemAvailable/home', pageId];
-    }
+    return getFeatureRoute(pageId);
   }
 }
