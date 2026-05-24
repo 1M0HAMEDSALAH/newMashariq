@@ -25,6 +25,7 @@ export class BusUpcomingComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   buses = signal<Bus[]>([]);
+  expandedBusId = signal<number | null>(null);
   isLoading = signal(false);
 
   searchQuery = signal('');
@@ -36,10 +37,10 @@ export class BusUpcomingComponent implements OnInit {
   totalItemCount = signal(0);
 
   get totalPages(): number {
-  return Math.ceil(
-    this.totalItemCount() / this.pageSize()
-  );
-}
+    return Math.ceil(
+      this.totalItemCount() / this.pageSize()
+    );
+  }
 
   private searchSubject = new Subject<string>();
   ngOnInit(): void {
@@ -143,5 +144,9 @@ export class BusUpcomingComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  toggleExpand(busId: number): void {
+    this.expandedBusId.set(this.expandedBusId() === busId ? null : busId);
   }
 }

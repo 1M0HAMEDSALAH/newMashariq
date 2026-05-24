@@ -1,9 +1,9 @@
-<div *ngFor="let bus of buses(); trackBy: trackByBus" class="bus-row-card" [routerLink]="['/bus-details', bus.sid]">
+<div *ngFor="let bus of buses(); trackBy: trackByBus" class="bus-row-card" [class.expanded]="expandedBusId()===bus.sid">
 
-  <!-- Main Row -->
-  <div class="bus-row-main">
+  <!-- HEADER -->
+  <div class="bus-row-main" (click)="toggleExpand(bus.sid)">
 
-    <!-- Left -->
+    <!-- RIGHT -->
     <div class="bus-main-info">
 
       <div class="bus-icon">
@@ -12,68 +12,92 @@
 
       <div class="route-details">
 
-        <h3>{{ bus.pathName }}</h3>
+        <h3>
+          {{ bus.pathName }}
+        </h3>
 
-        <span class="bus-number">
-          {{ bus.bus.busNumber }}
-        </span>
+        <div class="route-meta">
 
-        <span class="passport-count">
-          {{ bus.passportCount }} راكب
-        </span>
+          <span class="bus-number">
+            {{ bus.bus.busNumber }}
+          </span>
+
+          <span class="passport-count">
+            {{ bus.passportCount }} حاج
+          </span>
+
+        </div>
 
       </div>
 
     </div>
 
-    <!-- Middle -->
+    <!-- CENTER -->
     <div class="bus-meta-info">
-
-      <div class="meta-item">
-
-        <i class="fa-regular fa-user"></i>
-
-        <div class="meta-text">
-          <span class="label">السائق</span>
-
-          <span class="value">
-            {{ bus.driver.driverName }}
-          </span>
-        </div>
-
-      </div>
 
       <div class="meta-item">
 
         <i class="fa-solid fa-building"></i>
 
         <div class="meta-text">
-          <span class="label">الشركة</span>
+
+          <span class="label">
+            الشركة
+          </span>
 
           <span class="value">
             {{ bus.transportationCompany }}
           </span>
+
+        </div>
+
+      </div>
+
+      <div class="meta-item">
+
+        <i class="fa-solid fa-users"></i>
+
+        <div class="meta-text">
+
+          <span class="label">
+            عدد الحجاج
+          </span>
+
+          <span class="value">
+            {{ bus.passportCount }} حاج
+          </span>
+
         </div>
 
       </div>
 
     </div>
 
-    <!-- Right -->
+    <!-- LEFT -->
     <div class="bus-status-action">
 
       <div class="time-block">
 
         <i class="fa-regular fa-clock"></i>
 
-        <span>
-          {{ formatTime(bus.busDepartureTime) }}
-        </span>
+        <div class="time-text">
+
+          <strong>
+            {{ formatTime(bus.busDepartureTime) }}
+          </strong>
+
+          <small>
+            {{ bus.busDepartureTime | date:'dd/MM/yyyy' }}
+          </small>
+
+        </div>
 
       </div>
 
       <div class="status-badge" [ngClass]="getStatusClass(bus.status)">
+
         {{ bus.statusName }}
+
       </div>
 
       <div class="action-arrow">
@@ -84,41 +108,49 @@
 
   </div>
 
-  <!-- Expand Details -->
+  <!-- EXPAND -->
   <div class="bus-expand-content">
 
     <div class="expand-grid">
 
       <div class="expand-item">
-        <label>رقم الرحلة</label>
-        <span>
-          {{ bus.flightDetails?.flightIata || '-' }}
-        </span>
-      </div>
-
-      <div class="expand-item">
-        <label>المطار</label>
-        <span>
-          {{ bus.flightDetails?.airPortCode || '-' }}
-        </span>
-      </div>
-
-      <div class="expand-item">
-        <label>شركة الطيران</label>
-        <span>
-          {{ bus.flightDetails?.airTransportationCompany || '-' }}
-        </span>
+        <label>السائق</label>
+        <span>{{ bus.driver.driverName }}</span>
       </div>
 
       <div class="expand-item">
         <label>رقم الجوال</label>
-        <span>
-          {{ getDriverMobile(bus) }}
-        </span>
+        <span>{{ getDriverMobile(bus) }}</span>
+      </div>
+
+      <div class="expand-item">
+        <label>رقم الرحلة</label>
+        <span>{{ bus.flightDetails?.flightIata || '-' }}</span>
+      </div>
+
+      <div class="expand-item">
+        <label>المطار</label>
+        <span>{{ bus.flightDetails?.airPortCode || '-' }}</span>
+      </div>
+
+      <div class="expand-item">
+        <label>شركة الطيران</label>
+        <span>{{ bus.flightDetails?.airTransportationCompany || '-' }}</span>
+      </div>
+
+      <div class="expand-item">
+        <label>Terminal</label>
+        <span>{{ bus.flightDetails?.terminalNo || '-' }}</span>
+      </div>
+
+      <div class="expand-item">
+        <label>Manifest</label>
+        <span>{{ bus.manifestId || '-' }}</span>
       </div>
 
       <div class="expand-item">
         <label>الجنسية</label>
+
         <span>
           {{
           bus.nationalities.length
@@ -128,44 +160,23 @@
         </span>
       </div>
 
-      <div class="expand-item">
-        <label>Manifest</label>
-        <span>
-          {{ bus.manifestId || '-' }}
-        </span>
-      </div>
-
-      <div class="expand-item">
-        <label>Terminal</label>
-        <span>
-          {{ bus.flightDetails?.terminalNo || '-' }}
-        </span>
-      </div>
-
-      <div class="expand-item">
-        <label>وقت الرحلة</label>
-        <span>
-          {{
-          bus.flightDetails?.flightDate
-          ? formatTime(bus.flightDetails!.flightDate)
-          : '-'
-          }}
-        </span>
-      </div>
-
     </div>
 
-    <!-- Houses -->
+    <!-- HOUSES -->
     <div class="houses-wrapper" *ngIf="bus.houses.length">
 
       <div class="houses-title">
+
         <i class="fa-solid fa-hotel"></i>
+
         السكن
+
       </div>
 
       <div *ngFor="let house of bus.houses" class="house-card">
 
         <div>
+
           <strong>
             {{ house.houseName }}
           </strong>
@@ -174,6 +185,7 @@
             Contract:
             {{ house.contractNumber }}
           </small>
+
         </div>
 
         <span class="house-count">
