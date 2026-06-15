@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -24,13 +25,16 @@ import {
   HalScreenConfig,
   getHalScreen,
 } from '../../core/config/hal-screens.config';
+import { DynamicFormComponent } from '../../shared/components/dynamic-form/dynamic-form.component';
+import { DynamicTemplateDirective } from '../../shared/components/dynamic-form/dynamic-template.directive';
+import { DynamicFormConfig } from '../../shared/components/dynamic-form/dynamic-form.model';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 
 @Component({
   selector: 'app-hal-lost',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, DynamicFormComponent, DynamicTemplateDirective],
   templateUrl: './hal-lost.component.html',
   styleUrl: './hal-lost.component.css',
 })
@@ -48,7 +52,6 @@ export class HalLostComponent implements OnInit {
   notifications = signal<HalLostNotification[]>([]);
   expandedId = signal<number | null>(null);
   isLoading = signal(false);
-  isSubmitting = signal(false);
   showCreateModal = signal(false);
   isLocating = signal(false);
   locationError = signal<string | null>(null);
@@ -60,17 +63,10 @@ export class HalLostComponent implements OnInit {
   pageSize = signal(10);
   totalItemCount = signal(0);
 
-  createForm = this.fb.group({
-    latitude: [null as number | null],
-    longitude: [null as number | null],
-    description: [''],
-    notes: [''],
-    passportNo: [''],
-    hajjName: [''],
-    hajjCount: [1, [Validators.required, Validators.min(1)]],
-    reporterName: [''],
-    reporterPhone: [''],
-  });
+  formConfig = signal<DynamicFormConfig | null>(null);
+
+  @ViewChild(DynamicFormComponent) dynamicForm?: DynamicFormComponent;
+
 
   totalPages = computed(() =>
     Math.max(1, Math.ceil(this.totalItemCount() / this.pageSize()))
@@ -101,8 +97,10 @@ export class HalLostComponent implements OnInit {
 
   /** يُستدعى من القالب عند كل دورة change detection — يتفاعل مع الإدخال اليدوي */
   hasValidLocation(): boolean {
-    const lat = Number(this.createForm.controls.latitude.value);
-    const lng = Number(this.createForm.controls.longitude.value);
+    const form = this.dynamicForm?.form;
+    if (!form) return false;
+    const lat = Number(form.controls['latitude']?.value);
+    const lng = Number(form.controls['longitude']?.value);
     return !Number.isNaN(lat) && !Number.isNaN(lng) && !(lat === 0 && lng === 0);
   }
 
@@ -200,23 +198,76 @@ export class HalLostComponent implements OnInit {
   }
 
   openCreateModal(): void {
-    if (!this.screen()?.canCreate) return;
+    const screen = this.screen();
+    if (!screen?.canCreate) return;
 
     const reporter = this.authService.getReporterDefaults();
     this.reportType.set('single');
     this.showManualLocation.set(false);
-    this.createForm.reset({
-      latitude: null,
-      longitude: null,
-      description: '',
-      notes: '',
-      passportNo: '',
-      hajjName: '',
-      hajjCount: 1,
-      reporterName: reporter.reporterName,
-      reporterPhone: reporter.reporterPhone,
-    });
     this.locationError.set(null);
+
+    this.formConfig.set({
+      apiPath: 'HAL/Lost',
+      apiMethod: 'POST',
+      payloadMapper: (v: any) => {
+        const isSingle = this.reportType() === 'single';
+        const hajjCount = isSingle ? 1 : Math.max(2, v.hajjCount ?? 2);
+        const description =
+          v.description?.trim() ||
+          v.notes?.trim() ||
+          (isSingle ? 'بلاغ تائه — حاج واحد' : `بلاغ تائه — مجموعة (${hajjCount} حاج)`);
+
+        return {
+          notificationDto: {
+            id: 0,
+            latitude: Number(v.latitude),
+            longitude: Number(v.longitude),
+            description,
+            notes: v.notes?.trim() || description,
+            passportNo: isSingle ? v.passportNo?.trim() || undefined : undefined,
+            hajjName: isSingle ? v.hajjName?.trim() || undefined : undefined,
+            hajjCount,
+            reporterName: v.reporterName?.trim() || undefined,
+            reporterPhone: v.reporterPhone?.trim() || undefined,
+            cityId: screen.cityId,
+            filePaths: [],
+          },
+          requestedByPartyId: this.authService.getPartyId(),
+        };
+      },
+      sections: [
+        { customTemplateName: 'typeSwitchTemplate' },
+        {
+          customTemplateName: 'locationTemplate',
+          fields: [
+            { key: 'latitude', type: 'hidden' },
+            { key: 'longitude', type: 'hidden' }
+          ]
+        },
+        {
+          title: 'بيانات الحاج',
+          stepNum: 3,
+          fields: [
+            { key: 'hajjName', type: 'text', label: 'اسم الحاج', placeholder: 'الاسم كما في الجواز', customTemplateName: 'singleOnlyNameTemplate' },
+            { key: 'passportNo', type: 'text', label: 'رقم الجواز', placeholder: 'رقم الجواز', customTemplateName: 'singleOnlyPassportTemplate' },
+            { key: 'hajjCount', type: 'number', label: 'عدد الحجاج في المجموعة', min: 2, defaultValue: 1, customTemplateName: 'groupOnlyCountTemplate' },
+            { key: 'description', type: 'textarea', label: 'وصف البلاغ / الموقع', placeholder: 'مثال: حاج تائه عند فندق الجوهرة — شارع منصور', cssClass: 'full', rows: 3 },
+            { key: 'notes', type: 'textarea', label: 'ملاحظات إضافية', placeholder: 'اختياري', cssClass: 'full', rows: 2 }
+          ]
+        },
+        {
+          title: 'بيانات المُبلّغ',
+          stepNum: 4,
+          autoTag: 'من حسابك',
+          cssClass: 'reporter-section',
+          fields: [
+            { key: 'reporterName', type: 'text', label: 'الاسم', placeholder: 'اسمك', defaultValue: reporter.reporterName },
+            { key: 'reporterPhone', type: 'tel', label: 'الجوال', placeholder: '05xxxxxxxx', defaultValue: reporter.reporterPhone }
+          ]
+        }
+      ]
+    });
+
     this.showCreateModal.set(true);
     setTimeout(() => this.captureLocation(), 300);
   }
@@ -230,20 +281,25 @@ export class HalLostComponent implements OnInit {
 
   setReportType(type: 'single' | 'group'): void {
     this.reportType.set(type);
+    const form = this.dynamicForm?.form;
+    if (!form) return;
+
     if (type === 'single') {
-      this.createForm.patchValue({ hajjCount: 1 });
+      form.patchValue({ hajjCount: 1 });
       return;
     }
-    const count = this.createForm.controls.hajjCount.value;
+    const count = form.controls['hajjCount']?.value;
     if (!count || count < 2) {
-      this.createForm.patchValue({ hajjCount: 2 });
+      form.patchValue({ hajjCount: 2 });
     }
-    this.createForm.patchValue({ hajjName: '', passportNo: '' });
+    form.patchValue({ hajjName: '', passportNo: '' });
   }
 
   onManualCoordChange(): void {
-    const lat = Number(this.createForm.controls.latitude.value);
-    const lng = Number(this.createForm.controls.longitude.value);
+    const form = this.dynamicForm?.form;
+    if (!form) return;
+    const lat = Number(form.controls['latitude']?.value);
+    const lng = Number(form.controls['longitude']?.value);
     if (!Number.isNaN(lat) && !Number.isNaN(lng) && (lat !== 0 || lng !== 0)) {
       this.locationError.set(null);
     }
@@ -260,7 +316,7 @@ export class HalLostComponent implements OnInit {
     this.locationError.set(null);
 
     const onSuccess = (pos: GeolocationPosition) => {
-      this.createForm.patchValue({
+      this.dynamicForm?.form.patchValue({
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
       });
@@ -300,8 +356,10 @@ export class HalLostComponent implements OnInit {
   }
 
   openMapsPicker(): void {
-    const lat = this.createForm.controls.latitude.value;
-    const lng = this.createForm.controls.longitude.value;
+    const form = this.dynamicForm?.form;
+    if (!form) return;
+    const lat = form.controls['latitude']?.value;
+    const lng = form.controls['longitude']?.value;
     const q =
       lat != null && lng != null && (lat !== 0 || lng !== 0)
         ? `${lat},${lng}`
@@ -313,60 +371,21 @@ export class HalLostComponent implements OnInit {
     );
   }
 
-  submitCreate(): void {
-    const screen = this.screen();
-    if (!screen?.canCreate) return;
-
+  onSubmitCheck(): void {
     if (!this.hasValidLocation()) {
       this.toast.warning('يجب إدخال الموقع (خط العرض وخط الطول) قبل الإرسال');
       this.showManualLocation.set(true);
-      return;
+      // We manually throw an error here to prevent the dynamic form from submitting if we wanted,
+      // but the dynamic form handles submitting if form is valid. Wait, latitude/longitude aren't marked 'required'
+      // in the config, so the form might be valid. If we want to block it, we should add 'required' validators to them!
+      // But we will handle this in the template via [disabled].
     }
+  }
 
-    const v = this.createForm.getRawValue();
-    const isSingle = this.reportType() === 'single';
-    const hajjCount = isSingle ? 1 : Math.max(2, v.hajjCount ?? 2);
-    const description =
-      v.description?.trim() ||
-      v.notes?.trim() ||
-      (isSingle ? 'بلاغ تائه — حاج واحد' : `بلاغ تائه — مجموعة (${hajjCount} حاج)`);
-
-    this.isSubmitting.set(true);
-    this.halService
-      .createNotification({
-        notificationDto: {
-          id: 0,
-          latitude: Number(v.latitude),
-          longitude: Number(v.longitude),
-          description,
-          notes: v.notes?.trim() || description,
-          passportNo: isSingle ? v.passportNo?.trim() || undefined : undefined,
-          hajjName: isSingle ? v.hajjName?.trim() || undefined : undefined,
-          hajjCount,
-          reporterName: v.reporterName?.trim() || undefined,
-          reporterPhone: v.reporterPhone?.trim() || undefined,
-          cityId: screen.cityId,
-          filePaths: [],
-        },
-        requestedByPartyId: this.authService.getPartyId(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.isSubmitting.set(false);
-          if (res.isSuccess || res.status === 'success') {
-            this.toast.success(res.message || 'تم تسجيل البلاغ بنجاح');
-            this.closeCreateModal();
-            this.pageNo.set(1);
-            this.fetchNotifications();
-          } else {
-            this.toast.error(res.message || 'فشل تسجيل البلاغ');
-          }
-        },
-        error: () => {
-          this.isSubmitting.set(false);
-        },
-      });
+  onFormSuccess(res: any): void {
+    this.closeCreateModal();
+    this.pageNo.set(1);
+    this.fetchNotifications();
   }
 
   getStatusClass(status: number): string {

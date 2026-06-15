@@ -1,3 +1,181 @@
+
+@if (showCreateModal()) {
+<div class="modal-backdrop" (click)="closeCreateModal()">
+  <div class="modal-panel create-modal" role="dialog" (click)="$event.stopPropagation()">
+    <header class="modal-hero">
+      <div class="modal-hero-text">
+        <span class="modal-hero-badge">بلاغ جديد</span>
+        <h2>تسجيل بلاغ تائه</h2>
+        <p>حدد الموقع وأدخل بيانات الحاج أو المجموعة</p>
+      </div>
+      <button type="button" class="modal-close" (click)="closeCreateModal()" aria-label="إغلاق">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </header>
+
+    @if (formConfig()) {
+    <app-dynamic-form [config]="formConfig()!" (onSuccess)="onFormSuccess($event)">
+      
+      <!-- Custom Template: Type Switch -->
+      <ng-template dynamicTemplate="typeSwitchTemplate">
+        <section class="form-section">
+          <h3 class="section-title">
+            <span class="step-num">1</span>
+            نوع البلاغ
+          </h3>
+          <div class="type-switch">
+            <button
+              type="button"
+              class="type-option"
+              [class.active]="reportType() === 'single'"
+              (click)="setReportType('single')"
+            >
+              <i class="fa-solid fa-user"></i>
+              <span>حاج واحد</span>
+            </button>
+            <button
+              type="button"
+              class="type-option"
+              [class.active]="reportType() === 'group'"
+              (click)="setReportType('group')"
+            >
+              <i class="fa-solid fa-people-group"></i>
+              <span>مجموعة حجاج</span>
+            </button>
+          </div>
+        </section>
+      </ng-template>
+
+      <!-- Custom Template: Location Picker -->
+      <ng-template dynamicTemplate="locationTemplate" let-form>
+        <section class="form-section location-section" [class.has-location]="hasValidLocation()" [formGroup]="form">
+          <h3 class="section-title">
+            <span class="step-num">2</span>
+            الموقع <span class="required">*</span>
+          </h3>
+
+          @if (hasValidLocation()) {
+          <div class="location-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <div>
+              <strong>تم تحديد الموقع</strong>
+              <span>
+                {{ form.controls['latitude']?.value | number:'1.5-5' }},
+                {{ form.controls['longitude']?.value | number:'1.5-5' }}
+              </span>
+            </div>
+          </div>
+          }
+
+          <div class="location-actions">
+            <button
+              type="button"
+              class="btn-location primary"
+              [disabled]="isLocating()"
+              (click)="captureLocation()"
+            >
+              @if (isLocating()) {
+              <i class="fa-solid fa-spinner fa-spin"></i> جاري التحديد...
+              } @else {
+              <i class="fa-solid fa-crosshairs"></i>
+              {{ hasValidLocation() ? 'إعادة تحديد GPS' : 'تحديد موقعي الحالي' }}
+              }
+            </button>
+            <button type="button" class="btn-location secondary" (click)="openMapsPicker()">
+              <i class="fa-solid fa-map"></i>
+              الخريطة
+            </button>
+          </div>
+
+          @if (locationError()) {
+          <p class="field-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ locationError() }}</p>
+          }
+
+          <button
+            type="button"
+            class="link-toggle"
+            (click)="showManualLocation.set(!showManualLocation())"
+          >
+            {{ showManualLocation() ? 'إخفاء الإدخال اليدوي' : 'إدخال الإحداثيات يدوياً' }}
+          </button>
+
+          @if (showManualLocation()) {
+          <div class="manual-coords">
+            <div class="form-field">
+              <label for="manual-lat">خط العرض</label>
+              <input
+                id="manual-lat"
+                type="number"
+                step="any"
+                formControlName="latitude"
+                placeholder="21.4225"
+                (input)="onManualCoordChange()"
+              />
+            </div>
+            <div class="form-field">
+              <label for="manual-lng">خط الطول</label>
+              <input
+                id="manual-lng"
+                type="number"
+                step="any"
+                formControlName="longitude"
+                placeholder="39.8262"
+                (input)="onManualCoordChange()"
+              />
+            </div>
+          </div>
+          }
+        </section>
+      </ng-template>
+
+      <!-- Custom Field: Single Name -->
+      <ng-template dynamicTemplate="singleOnlyNameTemplate" let-form>
+        @if (reportType() === 'single') {
+        <div class="form-field" [formGroup]="form">
+          <label for="hajjName">اسم الحاج</label>
+          <input id="hajjName" type="text" formControlName="hajjName" placeholder="الاسم كما في الجواز" />
+        </div>
+        }
+      </ng-template>
+
+      <!-- Custom Field: Single Passport -->
+      <ng-template dynamicTemplate="singleOnlyPassportTemplate" let-form>
+        @if (reportType() === 'single') {
+        <div class="form-field" [formGroup]="form">
+          <label for="passportNo">رقم الجواز</label>
+          <input id="passportNo" type="text" formControlName="passportNo" placeholder="رقم الجواز" />
+        </div>
+        }
+      </ng-template>
+
+      <!-- Custom Field: Group Count -->
+      <ng-template dynamicTemplate="groupOnlyCountTemplate" let-form>
+        @if (reportType() === 'group') {
+        <div class="form-field" [formGroup]="form">
+          <label for="hajjCount">عدد الحجاج في المجموعة</label>
+          <input id="hajjCount" type="number" min="2" formControlName="hajjCount" />
+        </div>
+        }
+      </ng-template>
+
+      <!-- Footer -->
+      <footer class="modal-footer">
+        <button type="button" class="btn-ghost" (click)="closeCreateModal()">إلغاء</button>
+        <button type="submit" class="btn-submit" [disabled]="dynamicForm?.isSubmitting || !hasValidLocation()" (click)="onSubmitCheck()">
+          @if (dynamicForm?.isSubmitting) {
+          <i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...
+          } @else {
+          <i class="fa-solid fa-paper-plane"></i> إرسال البلاغ
+          }
+        </button>
+      </footer>
+      
+    </app-dynamic-form>
+    }
+  </div>
+</div>
+}
+
 <div class="hal-container">
 
   @if (screen(); as current) {
@@ -214,200 +392,3 @@
 
 </div>
 
-@if (showCreateModal()) {
-<div class="modal-backdrop" (click)="closeCreateModal()">
-  <div class="modal-panel create-modal" role="dialog" (click)="$event.stopPropagation()">
-    <header class="modal-hero">
-      <div class="modal-hero-text">
-        <span class="modal-hero-badge">بلاغ جديد</span>
-        <h2>تسجيل بلاغ تائه</h2>
-        <p>حدد الموقع وأدخل بيانات الحاج أو المجموعة</p>
-      </div>
-      <button type="button" class="modal-close" (click)="closeCreateModal()" aria-label="إغلاق">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </header>
-
-    <form class="modal-body" [formGroup]="createForm" (ngSubmit)="submitCreate()">
-
-      <!-- نوع البلاغ -->
-      <section class="form-section">
-        <h3 class="section-title">
-          <span class="step-num">1</span>
-          نوع البلاغ
-        </h3>
-        <div class="type-switch">
-          <button
-            type="button"
-            class="type-option"
-            [class.active]="reportType() === 'single'"
-            (click)="setReportType('single')"
-          >
-            <i class="fa-solid fa-user"></i>
-            <span>حاج واحد</span>
-          </button>
-          <button
-            type="button"
-            class="type-option"
-            [class.active]="reportType() === 'group'"
-            (click)="setReportType('group')"
-          >
-            <i class="fa-solid fa-people-group"></i>
-            <span>مجموعة حجاج</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- الموقع -->
-      <section class="form-section location-section" [class.has-location]="hasValidLocation()">
-        <h3 class="section-title">
-          <span class="step-num">2</span>
-          الموقع <span class="required">*</span>
-        </h3>
-
-        @if (hasValidLocation()) {
-        <div class="location-success">
-          <i class="fa-solid fa-circle-check"></i>
-          <div>
-            <strong>تم تحديد الموقع</strong>
-            <span>
-              {{ createForm.controls.latitude.value | number:'1.5-5' }},
-              {{ createForm.controls.longitude.value | number:'1.5-5' }}
-            </span>
-          </div>
-        </div>
-        }
-
-        <div class="location-actions">
-          <button
-            type="button"
-            class="btn-location primary"
-            [disabled]="isLocating()"
-            (click)="captureLocation()"
-          >
-            @if (isLocating()) {
-            <i class="fa-solid fa-spinner fa-spin"></i> جاري التحديد...
-            } @else {
-            <i class="fa-solid fa-crosshairs"></i>
-            {{ hasValidLocation() ? 'إعادة تحديد GPS' : 'تحديد موقعي الحالي' }}
-            }
-          </button>
-          <button type="button" class="btn-location secondary" (click)="openMapsPicker()">
-            <i class="fa-solid fa-map"></i>
-            الخريطة
-          </button>
-        </div>
-
-        @if (locationError()) {
-        <p class="field-error"><i class="fa-solid fa-triangle-exclamation"></i> {{ locationError() }}</p>
-        }
-
-        <button
-          type="button"
-          class="link-toggle"
-          (click)="showManualLocation.set(!showManualLocation())"
-        >
-          {{ showManualLocation() ? 'إخفاء الإدخال اليدوي' : 'إدخال الإحداثيات يدوياً' }}
-        </button>
-
-        @if (showManualLocation()) {
-        <div class="manual-coords">
-          <div class="form-field">
-            <label for="manual-lat">خط العرض</label>
-            <input
-              id="manual-lat"
-              type="number"
-              step="any"
-              formControlName="latitude"
-              placeholder="21.4225"
-              (input)="onManualCoordChange()"
-            />
-          </div>
-          <div class="form-field">
-            <label for="manual-lng">خط الطول</label>
-            <input
-              id="manual-lng"
-              type="number"
-              step="any"
-              formControlName="longitude"
-              placeholder="39.8262"
-              (input)="onManualCoordChange()"
-            />
-          </div>
-        </div>
-        }
-      </section>
-
-      <!-- بيانات الحاج -->
-      <section class="form-section">
-        <h3 class="section-title">
-          <span class="step-num">3</span>
-          @if (reportType() === 'single') { بيانات الحاج } @else { بيانات المجموعة }
-        </h3>
-
-        @if (reportType() === 'single') {
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="hajjName">اسم الحاج</label>
-            <input id="hajjName" type="text" formControlName="hajjName" placeholder="الاسم كما في الجواز" />
-          </div>
-          <div class="form-field">
-            <label for="passportNo">رقم الجواز</label>
-            <input id="passportNo" type="text" formControlName="passportNo" placeholder="رقم الجواز" />
-          </div>
-        </div>
-        } @else {
-        <div class="form-field">
-          <label for="hajjCount">عدد الحجاج في المجموعة</label>
-          <input id="hajjCount" type="number" min="2" formControlName="hajjCount" />
-        </div>
-        }
-
-        <div class="form-field full">
-          <label for="description">وصف البلاغ / الموقع</label>
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="3"
-            placeholder="مثال: حاج تائه عند فندق الجوهرة — شارع منصور"
-          ></textarea>
-        </div>
-        <div class="form-field full">
-          <label for="notes">ملاحظات إضافية</label>
-          <textarea id="notes" formControlName="notes" rows="2" placeholder="اختياري"></textarea>
-        </div>
-      </section>
-
-      <!-- المُبلّغ -->
-      <section class="form-section reporter-section">
-        <h3 class="section-title">
-          <span class="step-num">4</span>
-          بيانات المُبلّغ
-          <span class="auto-tag">من حسابك</span>
-        </h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="reporterName">الاسم</label>
-            <input id="reporterName" type="text" formControlName="reporterName" placeholder="اسمك" />
-          </div>
-          <div class="form-field">
-            <label for="reporterPhone">الجوال</label>
-            <input id="reporterPhone" type="tel" formControlName="reporterPhone" placeholder="05xxxxxxxx" />
-          </div>
-        </div>
-      </section>
-
-      <footer class="modal-footer">
-        <button type="button" class="btn-ghost" (click)="closeCreateModal()">إلغاء</button>
-        <button type="submit" class="btn-submit" [disabled]="isSubmitting() || !hasValidLocation()">
-          @if (isSubmitting()) {
-          <i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...
-          } @else {
-          <i class="fa-solid fa-paper-plane"></i> إرسال البلاغ
-          }
-        </button>
-      </footer>
-    </form>
-  </div>
-</div>
-}

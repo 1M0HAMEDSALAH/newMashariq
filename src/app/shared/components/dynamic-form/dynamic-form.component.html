@@ -1,0 +1,67 @@
+<form class="dynamic-form-container" [formGroup]="form" (ngSubmit)="submitForm()">
+  <ng-container *ngFor="let section of config.sections">
+    
+    <!-- Render custom section if specified -->
+    <ng-container *ngIf="section.customTemplateName; else standardSection">
+      <ng-container *ngTemplateOutlet="getTemplate(section.customTemplateName) || fallback; context: { $implicit: form }"></ng-container>
+    </ng-container>
+
+    <!-- Standard Section -->
+    <ng-template #standardSection>
+      <section class="form-section">
+        <h3 class="section-title" *ngIf="section.title">
+          <span class="step-num" *ngIf="section.stepNum">{{ section.stepNum }}</span>
+          {{ section.title }}
+          <span class="auto-tag" *ngIf="section.autoTag">{{ section.autoTag }}</span>
+        </h3>
+        
+        <div [class]="section.cssClass || 'form-grid'">
+          <ng-container *ngFor="let field of section.fields">
+            
+            <ng-container *ngIf="field.customTemplateName; else standardField">
+              <ng-container *ngTemplateOutlet="getTemplate(field.customTemplateName) || fallback; context: { $implicit: form }"></ng-container>
+            </ng-container>
+            
+            <ng-template #standardField>
+              <ng-container *ngIf="field.type !== 'hidden'">
+                <div class="form-field" [ngClass]="field.cssClass">
+                  <label [for]="field.key" *ngIf="field.label">{{ field.label }}</label>
+                  
+                  <ng-container [ngSwitch]="field.type">
+                    <textarea *ngSwitchCase="'textarea'" 
+                      [id]="field.key" 
+                      [formControlName]="field.key" 
+                      [rows]="field.rows || 3" 
+                      [placeholder]="field.placeholder || ''">
+                    </textarea>
+                    
+                    <select *ngSwitchCase="'select'" 
+                      [id]="field.key" 
+                      [formControlName]="field.key">
+                      <option *ngFor="let opt of field.options" [value]="opt.value">{{ opt.label }}</option>
+                    </select>
+                    
+                    <input *ngSwitchDefault 
+                      [type]="field.type" 
+                      [id]="field.key" 
+                      [formControlName]="field.key" 
+                      [placeholder]="field.placeholder || ''" 
+                      [min]="field.min" 
+                      [max]="field.max" />
+                  </ng-container>
+                </div>
+              </ng-container>
+            </ng-template>
+            
+          </ng-container>
+        </div>
+      </section>
+    </ng-template>
+  </ng-container>
+
+  <ng-content select="footer"></ng-content>
+</form>
+
+<ng-template #fallback>
+  <div style="color: red; padding: 1rem;">Missing template</div>
+</ng-template>
