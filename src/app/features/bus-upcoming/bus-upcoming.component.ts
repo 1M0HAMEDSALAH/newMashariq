@@ -8,6 +8,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { FilterBarComponent, FilterField } from '../../shared/components/filter-bar/filter-bar.component';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -24,7 +26,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 @Component({
   selector: 'app-bus-upcoming',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PaginationComponent, FilterBarComponent],
   templateUrl: './bus-upcoming.component.html',
   styleUrl: './bus-upcoming.component.css',
 })
@@ -47,32 +49,11 @@ export class BusUpcomingComponent implements OnInit {
   pageSize = signal(10);
   totalItemCount = signal(0);
 
-  totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.totalItemCount() / this.pageSize()))
-  );
+  filterFields: FilterField[] = [
+    { key: 'searchQuery', type: 'search', placeholder: 'بحث برقم الحافلة، المسار، الشركة...' },
+    { key: 'tripDate', type: 'date', label: 'تاريخ الرحلة', icon: 'fa-regular fa-calendar' }
+  ];
 
-  paginationPages = computed(() => {
-    const total = this.totalPages();
-    const current = this.pageNo();
-    const windowSize = 5;
-    let start = Math.max(1, current - Math.floor(windowSize / 2));
-    let end = Math.min(total, start + windowSize - 1);
-    start = Math.max(1, end - windowSize + 1);
-    const pages: number[] = [];
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  });
-
-  rangeStart = computed(() => {
-    if (!this.totalItemCount()) return 0;
-    return (this.pageNo() - 1) * this.pageSize() + 1;
-  });
-
-  rangeEnd = computed(() =>
-    Math.min(this.pageNo() * this.pageSize(), this.totalItemCount())
-  );
-
-  private searchSubject = new Subject<string>();
   private activePageIds = signal<number[]>([14041]);
 
   ngOnInit(): void {
@@ -87,18 +68,7 @@ export class BusUpcomingComponent implements OnInit {
         this.activePageIds.set(getBusPageIds(pageId));
         this.pageNo.set(1);
         this.expandedBusId.set(null);
-        this.fetchBuses();
-      });
-
-    this.searchSubject
-      .pipe(
-        debounceTime(400),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe((query) => {
-        this.searchQuery.set(query);
-        this.pageNo.set(1);
+        this.selectedDate.set(this.todayIso());
         this.fetchBuses();
       });
   }
@@ -130,45 +100,28 @@ export class BusUpcomingComponent implements OnInit {
       });
   }
 
-  onDateChange(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.selectedDate.set(value);
+  onFilterChange(filters: Record<string, any>): void {
+    const query = filters['searchQuery'] || '';
+    if (this.searchQuery() !== query) {
+      this.searchQuery.set(query);
+    }
+    const date = filters['tripDate'] || this.todayIso();
+    if (this.selectedDate() !== date) {
+      this.selectedDate.set(date);
+    }
     this.pageNo.set(1);
     this.fetchBuses();
   }
 
-  onSearch(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.searchQuery.set(value);
-    this.searchSubject.next(value);
-  }
-
-  clearSearch(input?: HTMLInputElement): void {
-    if (input) input.value = '';
-    this.searchQuery.set('');
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
     this.pageNo.set(1);
     this.fetchBuses();
   }
 
-  onPageSizeChange(event: Event): void {
-    const value = Number((event.target as HTMLSelectElement).value);
-    this.pageSize.set(value);
-    this.pageNo.set(1);
-    this.fetchBuses();
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages() || page === this.pageNo()) return;
+  onPageChange(page: number): void {
     this.pageNo.set(page);
     this.fetchBuses();
-  }
-
-  nextPage(): void {
-    this.goToPage(this.pageNo() + 1);
-  }
-
-  prevPage(): void {
-    this.goToPage(this.pageNo() - 1);
   }
 
   trackByBus(_index: number, bus: Bus): number {

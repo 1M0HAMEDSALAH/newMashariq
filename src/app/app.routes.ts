@@ -14,6 +14,7 @@ import {
   getHalLegacyRedirects,
   getHalScreenRouteDefinitions,
 } from './core/config/hal-screens.config';
+import { UserSignatureLoginComponent } from './features/auth/user-signature-login/user-signature-login.component';
 
 const busScreenRoutes: Routes = getBusScreenRouteDefinitions().map((def) => ({
   path: def.path,
@@ -56,7 +57,6 @@ export const routes: Routes = [
     redirectTo: 'SystemAvailable/buses/reception',
     pathMatch: 'full',
   },
-
   {
     path: 'auth',
     children: [
@@ -71,6 +71,7 @@ export const routes: Routes = [
     children: [
       { path: 'SystemAvailable/home', component: HomeComponent },
       { path: 'SystemAvailable/hal/dashboard', component: HalDashboardComponent },
+      { path: 'SystemAvailable/user-signature', component: UserSignatureLoginComponent },
       ...busScreenRoutes,
       ...halScreenRoutes,
     ],

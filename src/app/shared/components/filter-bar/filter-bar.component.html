@@ -1,0 +1,86 @@
+<section class="filters-bar" [formGroup]="form">
+  <div class="filters-main">
+    @for (field of fields; track field.key) {
+      @if (field.type === 'search') {
+        <div class="filter-item filter-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input
+            type="search"
+            [formControlName]="field.key"
+            [placeholder]="field.placeholder || 'بحث...'"
+            autocomplete="off"
+            (keyup.enter)="onSearchSubmit()"
+          />
+          @if (form.get(field.key)?.value) {
+            <button type="button" class="clear-btn" (click)="clearField(field.key)" aria-label="مسح">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          }
+        </div>
+      } @else if (field.type === 'date') {
+        <div class="filter-item filter-date">
+          @if (field.label) {
+            <label [for]="field.key">
+              @if (field.icon) { <i [class]="field.icon"></i> }
+              {{ field.label }}
+            </label>
+          }
+          <input
+            [id]="field.key"
+            type="date"
+            [formControlName]="field.key"
+          />
+        </div>
+      } @else if (field.type === 'text' || field.type === 'number') {
+        <div class="filter-item filter-text">
+          @if (field.label) {
+            <label [for]="field.key">
+              @if (field.icon) { <i [class]="field.icon"></i> }
+              {{ field.label }}
+            </label>
+          }
+          <input
+            [id]="field.key"
+            [type]="field.type"
+            [formControlName]="field.key"
+            [placeholder]="field.placeholder || ''"
+            (keyup.enter)="onSearchSubmit()"
+          />
+        </div>
+      } @else if (field.type === 'select') {
+        <div class="filter-item filter-select">
+          @if (field.label) {
+            <label [for]="field.key">
+              @if (field.icon) { <i [class]="field.icon"></i> }
+              {{ field.label }}
+            </label>
+          }
+          <select [id]="field.key" [formControlName]="field.key">
+            @for (opt of field.options; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      }
+    }
+
+    @if (hasSearchButton) {
+      <button type="button" class="btn-search-submit" (click)="onSearchSubmit()">
+        <span class="material-symbols-outlined">search</span>
+        بحث
+      </button>
+    }
+  </div>
+
+  @if (showPageSize) {
+    <div class="filter-page-size">
+      <label for="filter-page-size">عرض</label>
+      <select id="filter-page-size" [value]="_pageSize()" (change)="onPageSizeChange($event)">
+        @for (size of pageSizeOptions; track size) {
+          <option [value]="size">{{ size }}</option>
+        }
+      </select>
+      <span>في الصفحة</span>
+    </div>
+  }
+</section>

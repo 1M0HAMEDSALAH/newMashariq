@@ -36,6 +36,9 @@ export class BusService {
       params = params.set('Date', date).set('TripDate', date);
     }
 
-    return this.http.get<MasterAmTdmResponse>('MasterAmTdm', { params });
+    return this.http.get<MasterAmTdmResponse>('MasterAmTdm', {
+      params,
+      headers: { 'X-Skip-Global-Loader': 'true' }
+    });
   }
 }

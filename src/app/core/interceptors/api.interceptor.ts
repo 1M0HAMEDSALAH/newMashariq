@@ -149,16 +149,26 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const loadingService = inject(LoadingService);
   const toastService = inject(ToastService);
 
+  // Check if this request should bypass the global loader
+  const skipGlobalLoader = req.headers.has('X-Skip-Global-Loader');
+  
+  let modifiedReq = req;
+  if (skipGlobalLoader) {
+    modifiedReq = req.clone({ headers: req.headers.delete('X-Skip-Global-Loader') });
+  }
+
   // Prepend BASE_URL for relative URLs (skip if already a full URL)
-  const apiReq = req.url.startsWith('http')
-    ? req
-    : req.clone({ url: `${BASE_URL}${req.url}` });
+  const apiReq = modifiedReq.url.startsWith('http')
+    ? modifiedReq
+    : modifiedReq.clone({ url: `${BASE_URL}${modifiedReq.url}` });
 
   const token = authService.getToken();
   const authReq = addHeaders(apiReq, token);
 
   // Signal that a request is in-flight (e.g. to show a global spinner)
-  loadingService.show();
+  if (!skipGlobalLoader) {
+    loadingService.show();
+  }
 
   return next(authReq).pipe(
 
@@ -215,6 +225,10 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
     }),
 
     // ── Always hide the loader when the request completes ─────────────────
-    finalize(() => loadingService.hide()),
+    finalize(() => {
+      if (!skipGlobalLoader) {
+        loadingService.hide();
+      }
+    }),
   );
 };

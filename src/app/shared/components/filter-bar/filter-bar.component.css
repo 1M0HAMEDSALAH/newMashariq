@@ -1,0 +1,163 @@
+:host {
+  display: block;
+}
+
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 18px;
+  direction: rtl;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.02);
+}
+
+.filters-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  flex: 1;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e8ecf0;
+  border-radius: 14px;
+  padding: 0 14px;
+  min-height: 48px;
+}
+
+.filter-search {
+  flex: 1 1 280px;
+}
+
+.filter-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+}
+
+.clear-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: 0.2s;
+}
+
+.clear-btn:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+.filter-date,
+.filter-text,
+.filter-select {
+  flex: 1 1 auto;
+}
+
+.filter-item label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.filter-item input[type="date"],
+.filter-item input[type="text"],
+.filter-item input[type="number"],
+.filter-item select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #0f172a;
+  flex: 1;
+  min-width: 120px;
+}
+
+.btn-search-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 14px;
+  background: #ed7a44;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  transition: 0.2s;
+  min-height: 48px;
+}
+
+.btn-search-submit:hover {
+  background: #1d4ed8;
+}
+
+.filter-page-size {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e8ecf0;
+  border-radius: 14px;
+  padding: 0 14px;
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.filter-page-size select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .filters-bar {
+    flex-direction: column;
+  }
+
+  .filters-main {
+    flex-direction: column;
+  }
+
+  .filter-search,
+  .filter-date,
+  .filter-text,
+  .filter-select {
+    width: 100%;
+  }
+
+  .btn-search-submit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-page-size {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

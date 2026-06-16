@@ -7,6 +7,7 @@ import {
 
 export function getFeatureRoute(pageId: number | string): (string | number)[] {
   const id = Number(pageId);
+  if (id === 2025) return ['/SystemAvailable/user-signature'];
   if (isBusScreenPageId(id)) return getBusRoute(id);
   if (isHalDashboardPageId(id)) return getHalDashboardRoute();
   if (isHalScreenPageId(id)) return getHalRoute(id);

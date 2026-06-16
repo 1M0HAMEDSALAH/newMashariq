@@ -9,6 +9,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { FilterBarComponent, FilterField } from '../../shared/components/filter-bar/filter-bar.component';
 import {
   FormBuilder,
   ReactiveFormsModule,
@@ -34,7 +36,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 @Component({
   selector: 'app-hal-lost',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, DynamicFormComponent, DynamicTemplateDirective],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, DynamicFormComponent, DynamicTemplateDirective, PaginationComponent, FilterBarComponent],
   templateUrl: './hal-lost.component.html',
   styleUrl: './hal-lost.component.css',
 })
@@ -67,33 +69,11 @@ export class HalLostComponent implements OnInit {
 
   @ViewChild(DynamicFormComponent) dynamicForm?: DynamicFormComponent;
 
+  filterFields: FilterField[] = [
+    { key: 'searchQuery', type: 'search', placeholder: 'بحث برقم البلاغ، الاسم، الجواز، الوصف...' }
+  ];
 
-  totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.totalItemCount() / this.pageSize()))
-  );
 
-  paginationPages = computed(() => {
-    const total = this.totalPages();
-    const current = this.pageNo();
-    const windowSize = 5;
-    let start = Math.max(1, current - Math.floor(windowSize / 2));
-    let end = Math.min(total, start + windowSize - 1);
-    start = Math.max(1, end - windowSize + 1);
-    const pages: number[] = [];
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  });
-
-  rangeStart = computed(() => {
-    if (!this.totalItemCount()) return 0;
-    return (this.pageNo() - 1) * this.pageSize() + 1;
-  });
-
-  rangeEnd = computed(() =>
-    Math.min(this.pageNo() * this.pageSize(), this.totalItemCount())
-  );
-
-  private searchSubject = new Subject<string>();
 
   /** يُستدعى من القالب عند كل دورة change detection — يتفاعل مع الإدخال اليدوي */
   hasValidLocation(): boolean {
@@ -115,19 +95,6 @@ export class HalLostComponent implements OnInit {
         this.screen.set(screen);
         this.pageNo.set(1);
         this.expandedId.set(null);
-        this.closeCreateModal();
-        this.fetchNotifications();
-      });
-
-    this.searchSubject
-      .pipe(
-        debounceTime(400),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe((query) => {
-        this.searchQuery.set(query);
-        this.pageNo.set(1);
         this.fetchNotifications();
       });
   }
@@ -160,37 +127,24 @@ export class HalLostComponent implements OnInit {
       });
   }
 
-  onSearch(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.searchQuery.set(value);
-    this.searchSubject.next(value);
+  onFilterChange(filters: Record<string, any>): void {
+    const query = filters['searchQuery'] || '';
+    if (this.searchQuery() !== query) {
+      this.searchQuery.set(query);
+      this.pageNo.set(1);
+      this.fetchNotifications();
+    }
   }
 
-  clearSearch(input?: HTMLInputElement): void {
-    if (input) input.value = '';
-    this.searchQuery.set('');
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
     this.pageNo.set(1);
     this.fetchNotifications();
   }
 
-  onPageSizeChange(event: Event): void {
-    this.pageSize.set(Number((event.target as HTMLSelectElement).value));
-    this.pageNo.set(1);
-    this.fetchNotifications();
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages() || page === this.pageNo()) return;
+  onPageChange(page: number): void {
     this.pageNo.set(page);
     this.fetchNotifications();
-  }
-
-  nextPage(): void {
-    this.goToPage(this.pageNo() + 1);
-  }
-
-  prevPage(): void {
-    this.goToPage(this.pageNo() - 1);
   }
 
   toggleExpand(id: number): void {

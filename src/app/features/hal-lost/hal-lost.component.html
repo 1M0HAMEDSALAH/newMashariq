@@ -209,32 +209,15 @@
   </header>
   }
 
-  <section class="filters-bar">
-    <div class="filter-search">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input
-        #searchInput
-        type="search"
-        placeholder="بحث برقم البلاغ، الاسم، الجواز، الوصف..."
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-      />
-      @if (searchQuery()) {
-      <button type="button" class="clear-btn" (click)="clearSearch(searchInput)">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      }
-    </div>
-    <div class="filter-page-size">
-      <label for="hal-page-size">عرض</label>
-      <select id="hal-page-size" [value]="pageSize()" (change)="onPageSizeChange($event)">
-        @for (size of pageSizeOptions; track size) {
-        <option [value]="size">{{ size }}</option>
-        }
-      </select>
-      <span>في الصفحة</span>
-    </div>
-  </section>
+  <app-filter-bar
+    [fields]="filterFields"
+    emitMode="onChange"
+    [showPageSize]="true"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
+    (filterChange)="onFilterChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  ></app-filter-bar>
 
   @if (isLoading()) {
   <div class="state-panel loading-panel">
@@ -363,30 +346,12 @@
   </div>
 
   @if (totalItemCount() > 0) {
-  <footer class="pagination-bar">
-    <p class="pagination-summary">
-      عرض <strong>{{ rangeStart() }}</strong>–<strong>{{ rangeEnd() }}</strong>
-      من <strong>{{ totalItemCount() }}</strong>
-    </p>
-    <nav class="pagination-controls">
-      <button type="button" class="page-btn" [disabled]="pageNo() <= 1" (click)="prevPage()">
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
-      @for (page of paginationPages(); track page) {
-      <button
-        type="button"
-        class="page-btn"
-        [class.active]="pageNo() === page"
-        (click)="goToPage(page)"
-      >
-        {{ page }}
-      </button>
-      }
-      <button type="button" class="page-btn" [disabled]="pageNo() >= totalPages()" (click)="nextPage()">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-    </nav>
-  </footer>
+    <app-pagination
+      [pageNo]="pageNo()"
+      [pageSize]="pageSize()"
+      [totalItemCount]="totalItemCount()"
+      (pageChange)="onPageChange($event)">
+    </app-pagination>
   }
   }
 

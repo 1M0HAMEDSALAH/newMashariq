@@ -1,0 +1,57 @@
+@if (_totalItemCount() > 0) {
+<footer class="pagination-bar">
+  <p class="pagination-summary">
+    عرض <strong>{{ rangeStart() }}</strong>–<strong>{{ rangeEnd() }}</strong>
+    من <strong>{{ _totalItemCount() }}</strong>
+  </p>
+
+  <nav class="pagination-controls" aria-label="تصفح الصفحات">
+    <button
+      type="button"
+      class="page-btn nav-btn"
+      [disabled]="_pageNo() <= 1"
+      (click)="prevPage()"
+      aria-label="الصفحة السابقة"
+    >
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+
+    @if (paginationPages()[0] > 1) {
+    <button type="button" class="page-btn" (click)="goToPage(1)">1</button>
+    @if (paginationPages()[0] > 2) {
+    <span class="page-ellipsis">…</span>
+    }
+    }
+
+    @for (page of paginationPages(); track page) {
+    <button
+      type="button"
+      class="page-btn"
+      [class.active]="_pageNo() === page"
+      (click)="goToPage(page)"
+    >
+      {{ page }}
+    </button>
+    }
+
+    @if (paginationPages()[paginationPages().length - 1] < totalPages()) {
+    @if (paginationPages()[paginationPages().length - 1] < totalPages() - 1) {
+    <span class="page-ellipsis">…</span>
+    }
+    <button type="button" class="page-btn" (click)="goToPage(totalPages())">
+      {{ totalPages() }}
+    </button>
+    }
+
+    <button
+      type="button"
+      class="page-btn nav-btn"
+      [disabled]="_pageNo() >= totalPages()"
+      (click)="nextPage()"
+      aria-label="الصفحة التالية"
+    >
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+  </nav>
+</footer>
+}

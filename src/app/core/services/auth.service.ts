@@ -54,6 +54,17 @@ export class AuthService {
     return this.http.post('Auth/checkUserName', { userName: username });
   }
 
+  getAllUsers(params: { Username?: string; CardNo?: string; FullName?: string; pageNo: number; pageSize: number }): Observable<any> {
+    let queryParams = `SM.Page=${params.pageNo}&SM.PageSize=${params.pageSize}`;
+    if (params.Username) queryParams += `&Username=${encodeURIComponent(params.Username)}`;
+    if (params.CardNo) queryParams += `&CardNo=${encodeURIComponent(params.CardNo)}`;
+    if (params.FullName) queryParams += `&FullName=${encodeURIComponent(params.FullName)}`;
+
+    return this.http.get(`Auth/GetAllUsers?${queryParams}`, {
+      headers: { 'X-Skip-Global-Loader': 'true' }
+    });
+  }
+
   requestOtp(username: string, otpReceiver: number, otpReceiverValue: string): Observable<any> {
     const body = {
       userName: username,
@@ -85,11 +96,11 @@ export class AuthService {
     } else {
       tokenStr = token;
     }
-    
+
     if (tokenStr.toLowerCase().startsWith('bearer ')) {
       tokenStr = tokenStr.substring(7);
     }
-    
+
     localStorage.setItem('auth_token', tokenStr);
   }
 

@@ -33,6 +33,7 @@ export class HalLostService {
 
     return this.http.get<HalLostApiResponse<HalLostListData>>(listEndpoint, {
       params,
+      headers: { 'X-Skip-Global-Loader': 'true' }
     });
   }
 

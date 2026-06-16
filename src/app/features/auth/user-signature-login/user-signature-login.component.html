@@ -1,0 +1,80 @@
+<div class="signature-container">
+  <div class="content-wrapper">
+    
+    <div class="header-section">
+      <h1>الدخول بتوقيع مستخدم</h1>
+    </div>
+
+    <!-- Search Section -->
+    <app-filter-bar
+      [fields]="filterFields"
+      emitMode="onSubmit"
+      (filterChange)="onFilterSubmit($event)"
+    ></app-filter-bar>
+
+    <!-- Results Section -->
+    <div class="results-section">
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>جاري البحث عن المستخدمين...</p>
+        </div>
+      } @else if (users.length === 0) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined icon">person_search</span>
+          <h3>لا يوجد نتائج</h3>
+          <p>لم يتم العثور على أي مستخدمين يطابقون شروط البحث.</p>
+        </div>
+      } @else {
+        <div class="users-grid">
+          @for (user of users; track user.partyId) {
+            <div class="user-card">
+              <div class="card-header">
+                <div class="avatar-circle">
+                  {{ user.fullNameArabic ? user.fullNameArabic.charAt(0) : 'م' }}
+                </div>
+                <div class="user-main-info">
+                  <h4>{{ user.fullNameArabic }}</h4>
+                  <span class="username">@{{ user.userName }}</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="info-row">
+                  <span class="material-symbols-outlined icon">badge</span>
+                  <div class="info-data">
+                    <span class="lbl">رقم البطاقة</span>
+                    <span class="val">{{ user.cardNumber }}</span>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <span class="material-symbols-outlined icon">phone_iphone</span>
+                  <div class="info-data">
+                    <span class="lbl">رقم الجوال</span>
+                    <span class="val" dir="ltr">{{ user.phoneNumber }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <button class="btn-login" (click)="loginAs(user)">
+                  <span class="material-symbols-outlined">login</span>
+                  تسجيل دخول
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (totalItemCount > 0) {
+          <app-pagination
+            [pageNo]="pageNo"
+            [pageSize]="pageSize"
+            [totalItemCount]="totalItemCount"
+            (pageChange)="onPageChange($event)">
+          </app-pagination>
+        }
+      }
+    </div>
+
+  </div>
+</div>

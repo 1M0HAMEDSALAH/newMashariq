@@ -25,47 +25,15 @@
   </header>
   }
 
-  <section class="filters-bar">
-    <div class="filter-search">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input
-        #searchInput
-        type="search"
-        placeholder="بحث برقم الحافلة، المسار، الشركة..."
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        autocomplete="off"
-      />
-      @if (searchQuery()) {
-      <button type="button" class="clear-btn" (click)="clearSearch(searchInput)" aria-label="مسح البحث">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      }
-    </div>
-
-    <div class="filter-date">
-      <label for="trip-date">
-        <i class="fa-regular fa-calendar"></i>
-        تاريخ الرحلة
-      </label>
-      <input
-        id="trip-date"
-        type="date"
-        [value]="selectedDate()"
-        (change)="onDateChange($event)"
-      />
-    </div>
-
-    <div class="filter-page-size">
-      <label for="page-size">عرض</label>
-      <select id="page-size" [value]="pageSize()" (change)="onPageSizeChange($event)">
-        @for (size of pageSizeOptions; track size) {
-        <option [value]="size">{{ size }}</option>
-        }
-      </select>
-      <span>في الصفحة</span>
-    </div>
-  </section>
+  <app-filter-bar
+    [fields]="filterFields"
+    emitMode="onChange"
+    [showPageSize]="true"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
+    (filterChange)="onFilterChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  ></app-filter-bar>
 
   @if (isLoading()) {
   <div class="state-panel loading-panel">
@@ -203,61 +171,12 @@
   </div>
 
   @if (totalItemCount() > 0) {
-  <footer class="pagination-bar">
-    <p class="pagination-summary">
-      عرض <strong>{{ rangeStart() }}</strong>–<strong>{{ rangeEnd() }}</strong>
-      من <strong>{{ totalItemCount() }}</strong>
-    </p>
-
-    <nav class="pagination-controls" aria-label="تصفح الصفحات">
-      <button
-        type="button"
-        class="page-btn nav-btn"
-        [disabled]="pageNo() <= 1"
-        (click)="prevPage()"
-        aria-label="الصفحة السابقة"
-      >
-        <i class="fa-solid fa-chevron-right"></i>
-      </button>
-
-      @if (paginationPages()[0] > 1) {
-      <button type="button" class="page-btn" (click)="goToPage(1)">1</button>
-      @if (paginationPages()[0] > 2) {
-      <span class="page-ellipsis">…</span>
-      }
-      }
-
-      @for (page of paginationPages(); track page) {
-      <button
-        type="button"
-        class="page-btn"
-        [class.active]="pageNo() === page"
-        (click)="goToPage(page)"
-      >
-        {{ page }}
-      </button>
-      }
-
-      @if (paginationPages()[paginationPages().length - 1] < totalPages()) {
-      @if (paginationPages()[paginationPages().length - 1] < totalPages() - 1) {
-      <span class="page-ellipsis">…</span>
-      }
-      <button type="button" class="page-btn" (click)="goToPage(totalPages())">
-        {{ totalPages() }}
-      </button>
-      }
-
-      <button
-        type="button"
-        class="page-btn nav-btn"
-        [disabled]="pageNo() >= totalPages()"
-        (click)="nextPage()"
-        aria-label="الصفحة التالية"
-      >
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-    </nav>
-  </footer>
+    <app-pagination
+      [pageNo]="pageNo()"
+      [pageSize]="pageSize()"
+      [totalItemCount]="totalItemCount()"
+      (pageChange)="onPageChange($event)">
+    </app-pagination>
   }
   }
 
