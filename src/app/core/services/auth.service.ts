@@ -30,6 +30,19 @@ export class AuthService {
     );
   }
 
+  virtualLogin(usernameOrCardNumber: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`Auth/VirtualLogin`, { usernameOrCardNumber }).pipe(
+      tap(res => {
+        if (res.status === 'success' && res.data) {
+          if (res.data.jwtTokenDto) {
+            this.saveToken(res.data.jwtTokenDto);
+          }
+          this.saveUserSession(res.data);
+        }
+      })
+    );
+  }
+
   register(userData: any): Observable<any> {
     return this.http.post('Auth/register', userData);
   }

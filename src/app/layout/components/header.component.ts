@@ -64,7 +64,7 @@ export class HeaderComponent implements OnInit {
       this.pageSubtitle.set('إرشاد ومتابعة البلاغات');
       return;
     }
-    this.pageTitle.set('مشاريق');
+    this.pageTitle.set('مشارق');
     this.pageSubtitle.set('نظام التشغيل');
   }
 }
